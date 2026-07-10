@@ -1,0 +1,19 @@
+services:
+  front:
+    build: ./front
+    restart: unless-stopped
+    expose:
+      - "3000"
+    networks: [app]
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file: ./backend/.env
+    expose:
+      - "4000"
+    networks: [app, data]
+
+networks:
+  app:
+  data:
+    internal: true

@@ -1,0 +1,14 @@
+packages:
+  - front
+  - backend
+allowBuilds:
+  '@biomejs/biome': true
+  '@prisma/engines': true
+  better-sqlite3: true
+  esbuild: true
+  prisma: true
+  sharp: true
+
+onlyBuiltDependencies:
+  - '@biomejs/biome'
+  - esbuild
