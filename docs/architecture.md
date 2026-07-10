@@ -3,9 +3,13 @@
 ## Status
 
 This document separates the current implementation from the approved future target.
-Current state: the repository remains a Vite React SPA. This run does not migrate
-source code, install Next.js/NestJS, create a database, or register new workspaces.
-The future target is a single repository with `front/` and `backend/` packages.
+Current state: the repository is a pnpm workspace with three surfaces — the preserved
+root Vite React SPA prototype, an initialized `front/` package (Next.js App Router:
+`app/`, `features/`, `shared/`), and an initialized `backend/` package (NestJS layered:
+`modules/`, `database/prisma/`, `common/`, SQLite Prisma baseline). Both packages are
+registered in `pnpm-workspace.yaml`, build and typecheck, and are intentionally
+domain-empty: no product domains, controllers, or schema models exist until the PRD
+names them.
 
 The decisions are recorded in:
 
@@ -115,9 +119,9 @@ services, and repository providers live inside `backend/src/modules/<domain>/`.
 
 | Concern | Responsibility |
 | --- | --- |
-| repo root | Owns current Vite SPA files until migration and future workspace configuration when explicitly implemented. |
-| `front/` | Future Next.js package; no runtime code is created in this initialization. |
-| `backend/` | Future NestJS package; no API, database, or Prisma runtime is created in this initialization. |
+| repo root | Owns the preserved Vite SPA prototype files and the pnpm workspace configuration. |
+| `front/` | Initialized Next.js package (app/features/shared boundaries); domain features are added only when the PRD names them. |
+| `backend/` | Initialized NestJS package with the Prisma SQLite baseline boundary; no product API, domain module, or schema model exists yet. |
 | `docs/` | Owns architecture records, plans, research, and decision records. |
 | `.env*` | Local secrets are ignored at root and package paths; only `.env.example` variants are trackable. |
 | `backend/prisma/migrations/` | Migration history is committed; local databases and generated client output are not. |
