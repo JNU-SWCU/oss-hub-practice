@@ -2,15 +2,12 @@ import { Injectable, type OnModuleDestroy } from "@nestjs/common";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import { PrismaClient } from "../../../generated/prisma/client";
+import { assertPooledDatabaseUrl } from "./runtime-url";
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleDestroy {
   constructor() {
-    const connectionString = process.env.DATABASE_URL;
-
-    if (!connectionString) {
-      throw new Error("DATABASE_URL is required for Prisma runtime.");
-    }
+    const connectionString = assertPooledDatabaseUrl(process.env.DATABASE_URL);
 
     // D1: physical connections are established lazily by the first query, not at startup.
     // Keep each warm serverless instance to one connection to bound database usage.

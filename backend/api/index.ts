@@ -1,13 +1,17 @@
 import type { Request, Response } from "express";
 import { createApp } from "../src/app.factory";
+import { assertPooledDatabaseUrl } from "../src/database/prisma/runtime-url";
 
 type RequestHandler = (request: Request, response: Response) => void;
 
 let requestHandlerPromise: Promise<RequestHandler> | undefined;
 
 async function bootstrap(): Promise<RequestHandler> {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL must be set for the serverless handler.");
+  try {
+    assertPooledDatabaseUrl(process.env.DATABASE_URL);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Invalid DATABASE_URL.";
+    throw new Error(`Serverless handler DATABASE_URL validation failed: ${message}`);
   }
 
   const app = await createApp();

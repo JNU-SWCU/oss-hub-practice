@@ -1,6 +1,11 @@
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import type { Request, Response } from "express";
+import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { assertPooledDatabaseUrl } from "./database/prisma/runtime-url";
 
+const POOLED_DATABASE_URL =
+  "postgresql://placeholder:placeholder@pooler.local:6543/postgres?pgbouncer=true";
 const { createAppMock } = vi.hoisted(() => ({ createAppMock: vi.fn() }));
 
 vi.mock("./app.factory", () => ({ createApp: createAppMock }));
@@ -18,6 +23,32 @@ function createResponse(): Response {
   } as unknown as Response;
 }
 
+describe("pooled database URL validator", () => {
+  it("rejects non-PostgreSQL protocols with a pooler example", () => {
+    expect(() => assertPooledDatabaseUrl("file:serverless-handler-test.db")).toThrow(
+      "must use the postgres:// or postgresql:// protocol",
+    );
+  });
+
+  it("rejects direct database URLs with a pooler example", () => {
+    expect(() =>
+      assertPooledDatabaseUrl(
+        "postgresql://placeholder:placeholder@localhost:5432/postgres?pgbouncer=true",
+      ),
+    ).toThrow("must use pooler port 6543");
+  });
+
+  it("rejects URLs without pgbouncer=true with a pooler example", () => {
+    expect(() =>
+      assertPooledDatabaseUrl("postgresql://placeholder:placeholder@pooler.local:6543/postgres"),
+    ).toThrow("must include the pgbouncer=true query parameter");
+  });
+
+  it("accepts a pooled PostgreSQL URL", () => {
+    expect(assertPooledDatabaseUrl(POOLED_DATABASE_URL)).toBe(POOLED_DATABASE_URL);
+  });
+});
+
 describe("serverless handler", () => {
   const originalDatabaseUrl = process.env.DATABASE_URL;
   let handler: ServerlessHandler;
@@ -29,7 +60,7 @@ describe("serverless handler", () => {
   };
 
   beforeAll(() => {
-    process.env.DATABASE_URL = "file:serverless-handler-test.db";
+    process.env.DATABASE_URL = POOLED_DATABASE_URL;
   });
 
   afterAll(() => {
@@ -57,7 +88,7 @@ describe("serverless handler", () => {
     handler = serverlessModule.default;
     resetHandler = serverlessModule.__resetForTest;
     resetHandler();
-    process.env.DATABASE_URL = "file:serverless-handler-test.db";
+    process.env.DATABASE_URL = POOLED_DATABASE_URL;
   });
 
   it("bootstraps once for a cold request", async () => {
@@ -102,22 +133,42 @@ describe("serverless handler", () => {
     Reflect.deleteProperty(process.env, "DATABASE_URL");
 
     await expect(handler({ url: "/" } as Request, createResponse())).rejects.toThrow(
-      "DATABASE_URL must be set for the serverless handler.",
+      "Serverless handler DATABASE_URL validation failed: DATABASE_URL is required",
     );
 
     expect(createAppMock).not.toHaveBeenCalled();
-    process.env.DATABASE_URL = "file:serverless-handler-test.db";
+    process.env.DATABASE_URL = POOLED_DATABASE_URL;
     await handler({ url: "/" } as Request, createResponse());
 
     expect(createAppMock).toHaveBeenCalledOnce();
   });
+});
 
-  it("delegates an unknown route to Nest's 404 response", async () => {
-    const response = createResponse();
+describe("Nest HTTP boundary", () => {
+  const originalDatabaseUrl = process.env.DATABASE_URL;
+  let app: NestExpressApplication | undefined;
 
-    await handler({ url: "/does-not-exist" } as Request, response);
+  beforeAll(async () => {
+    process.env.DATABASE_URL = POOLED_DATABASE_URL;
+    const { createApp } = await vi.importActual<typeof import("./app.factory")>("./app.factory");
+    app = await createApp();
+    await app.init();
+  });
 
-    expect(expressHandler).toHaveBeenCalledOnce();
-    expect(response.statusCode).toBe(404);
+  afterAll(async () => {
+    await app?.close();
+    if (originalDatabaseUrl) {
+      process.env.DATABASE_URL = originalDatabaseUrl;
+    } else {
+      Reflect.deleteProperty(process.env, "DATABASE_URL");
+    }
+  });
+
+  it("returns Nest's real 404 response for an unknown route", async () => {
+    if (!app) {
+      throw new Error("Nest application did not initialize.");
+    }
+
+    await request(app.getHttpServer()).get("/does-not-exist").expect(404);
   });
 });
