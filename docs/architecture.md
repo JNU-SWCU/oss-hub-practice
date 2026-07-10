@@ -53,20 +53,20 @@ The tree intentionally fixes only the first two levels below each `src/`:
 new top-level area needs an ADR or an update to the relevant ADR. This keeps the
 tree scannable without forcing a full Feature-Sliced Design stack on day one.
 
-`front/` and `backend/` are target package boundaries, not active packages yet.
-Until a separate migration plan is executed, the existing root Vite files remain
-the active application and the sibling `oss-platform-mock-up` repository remains
-outside this repository.
+`front/` and `backend/` are initialized, domain-empty package scaffolds. The root
+Vite files remain the active product surface until product domains land in the
+packages, and the sibling `oss-platform-mock-up` repository remains outside this
+repository.
 
 ## Frontend Target
 
-The future `front/` app uses Next.js App Router. Next.js does not mandate
+The `front/` package uses Next.js App Router. Next.js does not mandate
 feature-driven folders; this is an application convention chosen for ownership
 and route composition.
 
 | Folder | Responsibility |
 | --- | --- |
-| `front/` | Owns the future Next.js frontend package. |
+| `front/` | Owns the Next.js frontend package (initialized, domain-empty). |
 | `front/src/app/` | Owns route segments, layouts, metadata, route handlers, route groups, and composition. It must not own domain logic. |
 | `front/src/features/` | Owns user-facing use cases grouped by domain. A feature owns its UI behavior and transport calls; another feature cannot import its internals. |
 | `front/src/features/<domain>/` | Owns UI and client behavior for one explicitly named bounded domain. |
@@ -83,7 +83,7 @@ route-local implementation details.
 
 ## Backend Target
 
-The future `backend/` app uses module-first NestJS with a layered dependency
+The `backend/` package uses module-first NestJS with a layered dependency
 direction inside each domain module:
 
 ```text
@@ -92,13 +92,13 @@ controller -> service -> repository -> Prisma boundary
 
 | Folder | Responsibility |
 | --- | --- |
-| `backend/` | Owns the future NestJS backend package. |
+| `backend/` | Owns the NestJS backend package (initialized, domain-empty, SQLite Prisma baseline). |
 | `backend/src/modules/` | Owns bounded backend modules. |
 | `backend/src/modules/<domain>/` | Owns the module, controller, DTOs, service, repository, and domain-facing types for one backend domain. |
 | `backend/src/database/` | Owns backend database integration only. |
 | `backend/src/database/prisma/` | Provides the Nest Prisma module and Prisma Client boundary. |
 | `backend/src/common/` | Owns cross-cutting guards, filters, pipes, and interceptors. |
-| `backend/prisma/schema.prisma` | Owns the Prisma schema when the backend is implemented. |
+| `backend/prisma/schema.prisma` | Owns the Prisma schema (model-free until the PRD names domains). |
 | `backend/prisma/migrations/` | Owns Prisma migrations when migrations are introduced. |
 | `backend/test/` | Owns backend tests. |
 
@@ -126,7 +126,7 @@ services, and repository providers live inside `backend/src/modules/<domain>/`.
 | `.env*` | Local secrets are ignored at root and package paths; only `.env.example` variants are trackable. |
 | `backend/prisma/migrations/` | Migration history is committed; local databases and generated client output are not. |
 
-The current Vite app is a preserved legacy/prototype surface, not evidence that
-the future Next.js structure has already been implemented. A migration must be a
-separate scoped change that moves the app, changes workspace manifests, and
+The root Vite app is a preserved prototype surface. The Next.js and NestJS
+packages are initialized scaffolds; migrating prototype behavior into them must
+be a separate scoped change that moves the app, updates workspace manifests, and
 updates the regression baseline together.
