@@ -10,14 +10,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Root packageManager is the single source of truth for pnpm 10.34.5.
       - uses: pnpm/action-setup@v4
+      # Do not set action-setup version: packageManager selects the exact pnpm release.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter ./backend db:generate
-      - run: pnpm test
-      - run: pnpm workspace:typecheck
+      - name: Generate Prisma client
+        run: pnpm --filter ./backend db:generate
+        env:
+          DIRECT_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
       - run: pnpm workspace:lint
+      - run: pnpm workspace:typecheck
+      - run: pnpm --filter ./backend test
+      # Front tests are intentionally excluded until the front package has real test coverage.
       - run: pnpm workspace:build

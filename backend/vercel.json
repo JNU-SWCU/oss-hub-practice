@@ -1,0 +1,9 @@
+{
+  "buildCommand": "DIRECT_URL=\"postgresql://placeholder:placeholder@localhost:5432/placeholder\" pnpm exec prisma generate",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api/index"
+    }
+  ]
+}

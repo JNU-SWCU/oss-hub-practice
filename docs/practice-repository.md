@@ -55,3 +55,15 @@ fork한 뒤 직접 배포하는 연습 저장소입니다. 제품 데이터와 �
 - Supabase service role key를 browser 환경변수로 노출하지 않습니다.
 - `migrate dev`를 production DB에 실행하지 않습니다.
 - 원본 저장소의 secret이나 collaborator를 fork로 자동 이전한다고 가정하지 않습니다.
+
+## Divergence from oss-hub
+
+이 practice 오버레이의 기준 seed SHA는 `94ba8c6305a87a89afaf9efa19fe09d1792f49fa`입니다.
+
+| Ownership | Scope | Synchronization rule |
+| --- | --- | --- |
+| Shared invariant | `front/src`, backend module boundaries, root `DESIGN.md`, onboarding, `AGENTS.md` managed blocks | 명시적인 cherry-pick으로만 동기화합니다. |
+| oss-hub owned | Dockerfiles, `docker-compose.yml`, `Jenkinsfile.example`, `nginx/`, SQLite Prisma, pnpm 11 | practice에서는 참조용으로만 유지하며 비활성입니다. |
+| practice owned | backend `vercel.json`, handler, Postgres Prisma, pnpm `10.34.5`/Node `22` pin, backend Vitest, practice CI/guide | oss-hub로 역전파하지 않습니다. |
+
+루트 `vercel.json`과 Docker 계열 파일은 reference-only로 유지합니다.
