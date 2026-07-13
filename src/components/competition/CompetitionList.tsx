@@ -27,14 +27,23 @@ export function CompetitionList({ state, persona, onNavigate }: CompetitionListP
   const sort = parseSortKey(params.get("sort"));
   const query = params.get("q") ?? "";
   const [searchText, setSearchText] = useState(query);
+  const visibleCalls =
+    persona === "public" ? state.calls.filter((call) => call.visibility === "public") : state.calls;
+  const publishedTeamIds = new Set(
+    state.teams.filter((team) => team.status === "published").map((team) => team.id),
+  );
+  const visibleActivityCount =
+    persona === "public"
+      ? state.activity.filter((activity) => publishedTeamIds.has(activity.teamId)).length
+      : state.activity.length;
 
   useEffect(() => setSearchText(query), [query]);
 
   const filteredCalls = useMemo(
-    () => sortCalls(filterCalls(state.calls, status, query), sort),
-    [query, sort, state.calls, status],
+    () => sortCalls(filterCalls(visibleCalls, status, query), sort),
+    [query, sort, status, visibleCalls],
   );
-  const openCount = state.calls.filter((call) => call.status === "open").length;
+  const openCount = visibleCalls.filter((call) => call.status === "open").length;
   const assetCount = state.teams.filter((team) => team.status === "published").length;
 
   function updateQuery(
@@ -60,10 +69,10 @@ export function CompetitionList({ state, persona, onNavigate }: CompetitionListP
         description="공지성 안내는 사업단 홈페이지가 맡고, 이 화면은 대회 신청, 팀 GitHub ID 수합, 저장소 배정, 공개 자산 확인 흐름을 담당합니다."
       />
       <section className="portal-summary" aria-label="대회 현황 요약">
-        <SummaryItem label="전체 대회" value={`${state.calls.length}건`} />
+        <SummaryItem label="전체 대회" value={`${visibleCalls.length}건`} />
         <SummaryItem label="접수 중" value={`${openCount}건`} />
         <SummaryItem label="공개 자산" value={`${assetCount}팀`} />
-        <SummaryItem label="활동 이벤트" value={`${state.activity.length}건`} />
+        <SummaryItem label="활동 이벤트" value={`${visibleActivityCount}건`} />
       </section>
       <section className="portal-toolbar" aria-label="대회 검색과 필터">
         <div className="filter-pills">

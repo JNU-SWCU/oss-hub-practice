@@ -46,6 +46,9 @@ export function AppShell({ role, children, onNavigate }: AppShellProps) {
           <button type="button" onClick={() => onNavigate("/public/dashboard")}>
             공개 아카이브
           </button>
+          <button type="button" onClick={() => onNavigate("/information")}>
+            서비스 안내
+          </button>
           {role === "student" ? (
             <button type="button" onClick={() => onNavigate("/student/dashboard")}>
               내 대시보드

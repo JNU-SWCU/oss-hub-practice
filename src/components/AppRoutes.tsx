@@ -45,6 +45,8 @@ type AppRoutesProps = {
 export function AppRoutes(input: AppRoutesProps) {
   const competitionId = competitionIdFromPath(input.route);
   const competition = findCompetition(input.state.calls, competitionId);
+  const visibleCompetition =
+    input.role === "public" && competition?.visibility !== "public" ? undefined : competition;
 
   if (input.role === "student" && !input.hasConsented) {
     return <ConsentPage onConsent={input.onConsent} />;
@@ -123,11 +125,11 @@ export function AppRoutes(input: AppRoutesProps) {
     );
   }
 
-  if (input.route.endsWith("/apply") && competition !== undefined) {
+  if (input.route.endsWith("/apply") && visibleCompetition !== undefined) {
     if (input.role !== "student") {
       return <StudentRequiredNotice onNavigate={input.onNavigate} />;
     }
-    if (competition.status !== "open") {
+    if (visibleCompetition.status !== "open") {
       return (
         <main className="page-shell student-flow-page">
           <StudentJourney current="program" />
@@ -147,17 +149,17 @@ export function AppRoutes(input: AppRoutesProps) {
     }
     return (
       <ApplicationForm
-        competition={competition}
+        competition={visibleCompetition}
         onApply={input.onStudentApply}
         onNavigate={input.onNavigate}
       />
     );
   }
 
-  if (competition !== undefined) {
+  if (visibleCompetition !== undefined) {
     return (
       <CompetitionDetail
-        competition={competition}
+        competition={visibleCompetition}
         role={input.role}
         teams={input.state.teams}
         metric={input.metric}

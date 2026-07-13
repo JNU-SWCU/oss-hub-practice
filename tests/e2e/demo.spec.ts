@@ -35,6 +35,49 @@ async function enterStudentApplication(page: import("@playwright/test").Page) {
   await expect(page.getByRole("heading", { name: "2026 OSS 해커톤 신청" })).toBeVisible();
 }
 
+test("service guide maps the contest flow and opens public status without a persona", async ({
+  page,
+}) => {
+  await page.goto("/information");
+
+  await expect(page.getByRole("heading", { name: "JNU OSS Platform 이용 구조" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "대회에서 공개 자산까지" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "역할별 시작점" })).toBeVisible();
+
+  await page.getByRole("button", { name: "공개 현황 보기" }).click();
+  await expect(page).toHaveURL(/\/public\/dashboard/);
+  await expect(
+    page.getByRole("heading", { name: "전남대학교 OSS 대회와 저장소 자산" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "대회 센터" }).click();
+  await expect(page).toHaveURL(/\/competitions/);
+  await expect(page.getByText("내부 운영")).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "대회 현황 요약" }).getByText("40건"),
+  ).toBeVisible();
+
+  await page.evaluate(() => {
+    window.history.pushState(null, "", "/competitions/call-2");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page.getByRole("heading", { name: "화면을 찾을 수 없습니다" })).toBeVisible();
+});
+
+test("browser history restores the persona before returning to its role route", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page.getByRole("button", { name: /^교직원/ }).click();
+  await page.getByRole("button", { name: "서비스 안내" }).click();
+  await page.getByRole("button", { name: "공개 현황 보기" }).click();
+
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "JNU OSS Platform 이용 구조" })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "교직원 공모 운영 및 검토" })).toBeVisible();
+});
+
 test("login-first student application appears in staff review and becomes provisioned", async ({
   page,
 }) => {

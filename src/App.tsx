@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AppRoutes } from "./components/AppRoutes";
 import { AppShell, landingByRole } from "./components/AppShell";
+import { InformationArchitecturePage } from "./components/InformationArchitecturePage";
 import { LoginPage } from "./components/LoginPage";
 import {
   addManagedUser,
@@ -38,7 +39,9 @@ export function App() {
       replaceRoute("/login");
       setRoute(readRoute());
     }
-    function handlePopState(): void {
+    function handlePopState(event: PopStateEvent): void {
+      const historicRole = roleFromHistoryState(event.state);
+      if (historicRole !== undefined) setRole(historicRole);
       setRoute(readRoute());
     }
     window.addEventListener("popstate", handlePopState);
@@ -56,15 +59,18 @@ export function App() {
     }
   }, [hasConsented, role, route.path]);
 
-  function navigate(path: string): void {
-    window.history.pushState(null, "", path);
+  function navigate(path: string, nextRole: RoleId | undefined = role): void {
+    window.history.pushState(nextRole === undefined ? null : { role: nextRole }, "", path);
     window.scrollTo({ top: 0, left: 0 });
     setRoute(readRoute());
   }
 
   function enterRole(nextRole: RoleId): void {
     setRole(nextRole);
-    navigate(nextRole === "student" && !hasConsented ? "/consent" : landingByRole[nextRole]);
+    navigate(
+      nextRole === "student" && !hasConsented ? "/consent" : landingByRole[nextRole],
+      nextRole,
+    );
   }
 
   function handleReset(): void {
@@ -74,7 +80,7 @@ export function App() {
     window.sessionStorage.removeItem(studentConsentKey);
     setHasApplied(false);
     setMetric("activity");
-    navigate("/login");
+    navigate("/login", undefined);
   }
 
   function handleStudentApply(input: StudentApplicationInput): boolean {
@@ -110,7 +116,18 @@ export function App() {
   }
 
   if (route.path === "/login") {
-    return <LoginPage notice={route.reason} onLogin={enterRole} onReset={handleReset} />;
+    return (
+      <LoginPage
+        notice={route.reason}
+        onLogin={enterRole}
+        onReset={handleReset}
+        onNavigate={navigate}
+      />
+    );
+  }
+
+  if (route.path === "/information") {
+    return <InformationArchitecturePage onEnterRole={enterRole} onNavigate={navigate} />;
   }
 
   if (role === undefined) {
@@ -119,6 +136,7 @@ export function App() {
         notice="먼저 persona를 선택해야 하는 mock route입니다."
         onLogin={enterRole}
         onReset={handleReset}
+        onNavigate={navigate}
       />
     );
   }
@@ -169,4 +187,13 @@ function reasonText(reason: string | null): string {
     return "신청서는 학생 persona에서만 접근하는 mock route입니다.";
   }
   return "";
+}
+
+function roleFromHistoryState(state: unknown): RoleId | undefined {
+  if (typeof state !== "object" || state === null || !("role" in state)) return undefined;
+  return isRoleId(state.role) ? state.role : undefined;
+}
+
+function isRoleId(value: unknown): value is RoleId {
+  return value === "public" || value === "student" || value === "staff" || value === "admin";
 }

@@ -5,9 +5,10 @@ type LoginPageProps = {
   readonly notice: string;
   readonly onLogin: (role: RoleId) => void;
   readonly onReset: () => void;
+  readonly onNavigate: (path: string) => void;
 };
 
-export function LoginPage({ notice, onLogin, onReset }: LoginPageProps) {
+export function LoginPage({ notice, onLogin, onReset, onNavigate }: LoginPageProps) {
   return (
     <main className="login-screen">
       <section className="login-panel" aria-labelledby="login-title">
@@ -60,6 +61,9 @@ export function LoginPage({ notice, onLogin, onReset }: LoginPageProps) {
         </div>
         <button className="ghost-action compact" type="button" onClick={onReset}>
           시연 데이터 초기화
+        </button>
+        <button className="text-link" type="button" onClick={() => onNavigate("/information")}>
+          서비스 이용 구조 보기
         </button>
       </section>
     </main>
