@@ -25,7 +25,7 @@ export function StaffWorkspace({
         <p className="section-kicker">교직원 운영</p>
         <h2>교직원 공모 운영 및 검토</h2>
         <p>
-          교직원은 대회 접수 현황, 동의서/보고서 제출 상태, 저장소 배정 상태, 자산화 후보를 한 번에
+          교직원은 대회 접수 현황, 제출 동의서/보고서 상태, 저장소 배정 상태, 자산화 후보를 한 번에
           점검합니다. 공지는 사업단 홈페이지가 담당하고, 이 화면은 접수와 GitHub 수합을 담당합니다.
         </p>
         <div className="notice-banner">
@@ -60,7 +60,7 @@ export function StaffWorkspace({
                 <th>팀</th>
                 <th>대회</th>
                 <th>보고서</th>
-                <th>동의서</th>
+                <th>제출 동의서</th>
                 <th>상태</th>
                 <th>작업</th>
               </tr>
@@ -71,7 +71,7 @@ export function StaffWorkspace({
                   <td data-label="팀">{team.name}</td>
                   <td data-label="대회">{team.contest}</td>
                   <td data-label="보고서">{reportStateLabel(team.reportState)}</td>
-                  <td data-label="동의서">{consentStateLabel(team.consentState)}</td>
+                  <td data-label="제출 동의서">{consentStateLabel(team.consentState)}</td>
                   <td data-label="상태">{statusLabel(team.status)}</td>
                   <td className="action-cell" data-label="작업">
                     <button type="button" onClick={() => onApproveTeam(team.id)}>
@@ -83,7 +83,7 @@ export function StaffWorkspace({
                       onClick={() =>
                         onRequestCorrection(
                           team.id,
-                          "팀원 GitHub ID와 동의서 metadata를 다시 확인하세요.",
+                          "팀원 GitHub ID와 제출 동의서 metadata를 다시 확인하세요.",
                         )
                       }
                     >

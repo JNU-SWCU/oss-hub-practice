@@ -70,7 +70,7 @@ export function CompetitionDetail({
               신청서 작성
             </button>
           ) : null}
-          {role === "staff" ? (
+          {role === "staff" || role === "admin" ? (
             <button
               className="primary-action"
               type="button"
@@ -140,6 +140,6 @@ function actionDescription(role: RoleId, status: Call["status"]): string {
   if (role === "staff")
     return "교직원은 신청자 수, 검토 큐, repo 배정, 공개 전환 상태를 관리합니다.";
   if (role === "admin")
-    return "관리자는 사용자 권한과 GitHub API 호출 상태를 별도 콘솔에서 점검합니다.";
+    return "관리자는 교직원 검토 업무와 사용자 권한, GitHub API 호출 상태를 함께 점검합니다.";
   return "외부인은 공개 대회, 공개 저장소, 활동 리더보드만 볼 수 있습니다.";
 }

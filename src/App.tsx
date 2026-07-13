@@ -25,7 +25,7 @@ const studentConsentKey = "jnu-oss-demo-student-consent";
 
 export function App() {
   const [route, setRoute] = useState<Route>(() => readRoute());
-  const [role, setRole] = useState<RoleId | undefined>(undefined);
+  const [role, setRole] = useState<RoleId | undefined>(() => roleFromHistoryState(history.state));
   const [hasConsented, setHasConsented] = useState(
     () => window.sessionStorage.getItem(studentConsentKey) === "accepted",
   );
@@ -40,8 +40,7 @@ export function App() {
       setRoute(readRoute());
     }
     function handlePopState(event: PopStateEvent): void {
-      const historicRole = roleFromHistoryState(event.state);
-      if (historicRole !== undefined) setRole(historicRole);
+      if (hasRoleHistoryState(event.state)) setRole(roleFromHistoryState(event.state));
       setRoute(readRoute());
     }
     window.addEventListener("popstate", handlePopState);
@@ -54,13 +53,14 @@ export function App() {
     const needsConsent = !hasConsented && route.path !== "/consent";
     const revisitsCompletedConsent = hasConsented && route.path === "/consent";
     if (needsConsent || revisitsCompletedConsent) {
-      replaceRoute(requiredRoute);
+      replaceRoute(requiredRoute, role);
       setRoute(readRoute());
     }
   }, [hasConsented, role, route.path]);
 
-  function navigate(path: string, nextRole: RoleId | undefined = role): void {
-    window.history.pushState(nextRole === undefined ? null : { role: nextRole }, "", path);
+  function navigate(path: string, nextRole?: RoleId | null): void {
+    const historicRole = nextRole === undefined ? role : (nextRole ?? undefined);
+    window.history.pushState({ role: historicRole ?? null }, "", path);
     window.scrollTo({ top: 0, left: 0 });
     setRoute(readRoute());
   }
@@ -80,7 +80,7 @@ export function App() {
     window.sessionStorage.removeItem(studentConsentKey);
     setHasApplied(false);
     setMetric("activity");
-    navigate("/login", undefined);
+    navigate("/login", null);
   }
 
   function handleStudentApply(input: StudentApplicationInput): boolean {
@@ -127,7 +127,16 @@ export function App() {
   }
 
   if (route.path === "/information") {
-    return <InformationArchitecturePage onEnterRole={enterRole} onNavigate={navigate} />;
+    const informationPage = (
+      <InformationArchitecturePage onEnterRole={enterRole} onNavigate={navigate} />
+    );
+    return role === undefined ? (
+      informationPage
+    ) : (
+      <AppShell role={role} onNavigate={navigate}>
+        {informationPage}
+      </AppShell>
+    );
   }
 
   if (role === undefined) {
@@ -178,8 +187,8 @@ function readRoute(): Route {
   };
 }
 
-function replaceRoute(path: string): void {
-  window.history.replaceState(null, "", path);
+function replaceRoute(path: string, role?: RoleId): void {
+  window.history.replaceState(role === undefined ? null : { role }, "", path);
 }
 
 function reasonText(reason: string | null): string {
@@ -192,6 +201,10 @@ function reasonText(reason: string | null): string {
 function roleFromHistoryState(state: unknown): RoleId | undefined {
   if (typeof state !== "object" || state === null || !("role" in state)) return undefined;
   return isRoleId(state.role) ? state.role : undefined;
+}
+
+function hasRoleHistoryState(state: unknown): boolean {
+  return typeof state === "object" && state !== null && "role" in state;
 }
 
 function isRoleId(value: unknown): value is RoleId {

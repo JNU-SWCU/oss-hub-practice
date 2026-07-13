@@ -54,7 +54,7 @@ export function AppShell({ role, children, onNavigate }: AppShellProps) {
               내 대시보드
             </button>
           ) : null}
-          {role === "staff" ? (
+          {role === "staff" || role === "admin" ? (
             <button type="button" onClick={() => onNavigate("/staff/operations")}>
               검토 큐
             </button>

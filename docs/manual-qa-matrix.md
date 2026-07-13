@@ -1,6 +1,6 @@
 # Manual QA Matrix
 
-검증 대상: JNU OSS Platform frontend-only mock demo
+검증 대상: JNU OSS Platform Vercel practice workspace의 Vite mock demo
 
 배포 URL: https://jnu-oss-hub.vercel.app
 
@@ -10,10 +10,10 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 앱 유형 | Vite + React + TypeScript frontend-only mock |
+| 앱 유형 | 루트 Vite mock + 별도 `front`/`backend` Vercel scaffold |
 | 인증 | 실제 로그인 없음, 역할 선택 mock |
 | 데이터 | TypeScript seed fixture |
-| 검증일 | 2026-07-06 |
+| 검증일 | 2026-07-13 |
 
 ## 수동 QA 시나리오
 
@@ -40,7 +40,7 @@
 | `pnpm test` | PASS, 5 tests |
 | `pnpm lint` | PASS |
 | `pnpm build` | PASS |
-| `pnpm test:e2e` | PASS, 12 tests on desktop/mobile |
+| `pnpm test:e2e` | PASS, 22 tests on desktop/mobile |
 | `pnpm check` | PASS |
 
 ## 라이브 Smoke

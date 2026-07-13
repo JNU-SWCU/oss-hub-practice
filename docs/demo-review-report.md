@@ -2,7 +2,7 @@
 
 ## Verdict
 
-PASS with mock-demo scope. The implementation satisfies the frontend-only demonstration goal and does not claim production GitHub/OAuth/file-upload behavior.
+PASS with practice-demo scope. The root Vite app satisfies the frontend-only demonstration goal and does not claim production GitHub/OAuth/file-upload behavior. The repository also contains separate Vercel `front` and `backend` scaffolds for later integration.
 
 ## Scope Reviewed
 
@@ -58,7 +58,7 @@ No functional behavior was intentionally changed during this cleanup except the 
 
 ## Security Review
 
-This is a frontend-only mock with no backend, database, file storage, OAuth, GitHub API token, webhook receiver, or secret-bearing environment variable. Public mode was explicitly tested to hide phone numbers, emails, student numbers, consent data, and internal review state. Remaining security work is production-scope, not demo-scope: real auth, RBAC, upload scanning, CORS, CSRF/session policy, audit retention, and GitHub webhook signature verification.
+The root demo is a frontend-only mock with deterministic fixture data. The repository's separate backend scaffold defines a Vercel/Supabase boundary, but the demo does not claim live database, file storage, OAuth, GitHub token, or webhook behavior. Public mode was explicitly tested to hide phone numbers, emails, student numbers, consent data, and internal review state. Remaining security work is production-scope: real auth, RBAC, upload scanning, CORS, CSRF/session policy, audit retention, and GitHub webhook signature verification.
 
 ## Remaining Risks
 

@@ -10,9 +10,4 @@ The local checkout keeps the existing `origin` remote and adds:
 - `jnu` -> production repository
 - `practice` -> practice repository
 
-The checkout was intentionally not pushed automatically. The worktree contains
-pre-existing intent-to-add, modified, deleted, and untracked files. Before the
-first push, create a reviewed baseline commit that explicitly includes the
-desired files; do not use `git add .` blindly. Push production first, then seed
-the practice repository from the reviewed baseline without copying secrets,
-database credentials, personal access tokens, or production environment files.
+> Historical setup note: the original checkout was intentionally not pushed automatically while a reviewed baseline was prepared. The practice repository now has its own reviewed Vercel overlay; future changes should use normal reviewed commits without copying secrets, database credentials, personal access tokens, or production environment files.

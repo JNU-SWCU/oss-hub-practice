@@ -50,7 +50,7 @@ test("service guide maps the contest flow and opens public status without a pers
     page.getByRole("heading", { name: "전남대학교 OSS 대회와 저장소 자산" }),
   ).toBeVisible();
 
-  await page.getByRole("button", { name: "대회 센터" }).click();
+  await page.getByRole("button", { name: "프로그램", exact: true }).click();
   await expect(page).toHaveURL(/\/competitions/);
   await expect(page.getByText("내부 운영")).toHaveCount(0);
   await expect(
@@ -76,6 +76,27 @@ test("browser history restores the persona before returning to its role route", 
   await expect(page.getByRole("heading", { name: "JNU OSS Platform 이용 구조" })).toBeVisible();
   await page.goBack();
   await expect(page.getByRole("heading", { name: "교직원 공모 운영 및 검토" })).toBeVisible();
+});
+
+test("role state survives reload, reset clears it, and admin includes staff screens", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page.getByRole("button", { name: /^관리자/ }).click();
+  await page.getByRole("button", { name: "검토 큐" }).click();
+  await expect(page.getByRole("heading", { name: "교직원 공모 운영 및 검토" })).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "교직원 공모 운영 및 검토" })).toBeVisible();
+  await page.getByRole("button", { name: "서비스 안내" }).click();
+  await expect(page.getByRole("navigation", { name: "주요 화면" })).toBeVisible();
+  await expect(page.getByText("관리자 시연")).toBeVisible();
+
+  await page.getByRole("button", { name: "역할 바꾸기" }).click();
+  await page.getByRole("button", { name: "시연 데이터 초기화" }).click();
+  await expect.poll(() => page.evaluate(() => window.history.state)).toEqual({ role: null });
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "JNU OSS Platform" })).toBeVisible();
 });
 
 test("login-first student application appears in staff review and becomes provisioned", async ({

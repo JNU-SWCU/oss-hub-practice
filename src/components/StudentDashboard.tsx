@@ -121,7 +121,7 @@ function RepositoryAddress({ value }: { readonly value: string }) {
     <>
       {value.slice(0, boundary)}
       <wbr />
-      <span className="nowrap-phrase">{value.slice(boundary)}</span>
+      <span className="breakable-identifier">{value.slice(boundary)}</span>
     </>
   );
 }

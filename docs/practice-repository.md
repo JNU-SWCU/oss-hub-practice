@@ -78,7 +78,7 @@ fork한 뒤 직접 배포하는 연습 저장소입니다. 제품 데이터와 �
 
 ## Divergence from oss-hub
 
-이 practice 오버레이의 기준 seed SHA는 `94ba8c6305a87a89afaf9efa19fe09d1792f49fa`입니다.
+이 practice 오버레이를 처음 만든 역사적 seed SHA는 `94ba8c6305a87a89afaf9efa19fe09d1792f49fa`입니다. 현재 `origin/main`과의 실제 공통 기준은 Git 기록으로 확인하며 이 값은 동기화 기준으로 사용하지 않습니다.
 
 | Ownership | Scope | Synchronization rule |
 | --- | --- | --- |

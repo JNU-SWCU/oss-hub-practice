@@ -94,7 +94,7 @@ export function AppRoutes(input: AppRoutesProps) {
   }
 
   if (input.route === "/staff/operations") {
-    if (input.role !== "staff") {
+    if (input.role !== "staff" && input.role !== "admin") {
       return <RoleRequiredNotice roleLabel="교직원" onNavigate={input.onNavigate} />;
     }
     return (
