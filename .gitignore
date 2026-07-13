@@ -22,14 +22,6 @@ dist/
 build/
 .turbo/
 **/generated/
-backend/prisma/*.db
-backend/prisma/*.db-journal
-backend/prisma/*.db-wal
-backend/prisma/*.db-shm
-backend/prisma/*.sqlite
-backend/prisma/*.sqlite-journal
-backend/prisma/*.sqlite-wal
-backend/prisma/*.sqlite-shm
 *.tsbuildinfo
 *.log
 .local-preview.pid

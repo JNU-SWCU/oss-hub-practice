@@ -15,4 +15,4 @@ pre-existing intent-to-add, modified, deleted, and untracked files. Before the
 first push, create a reviewed baseline commit that explicitly includes the
 desired files; do not use `git add .` blindly. Push production first, then seed
 the practice repository from the reviewed baseline without copying secrets,
-Jenkins credentials, SSH keys, or production environment files.
+database credentials, personal access tokens, or production environment files.

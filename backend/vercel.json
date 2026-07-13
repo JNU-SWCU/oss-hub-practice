@@ -1,4 +1,6 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
   "buildCommand": "node -e \"process.exit(process.versions.node.startsWith('22.') ? 0 : 1)\" && [ \"$(pnpm --version)\" = \"10.34.5\" ] && DIRECT_URL=\"postgresql://placeholder:placeholder@localhost:5432/placeholder\" pnpm exec prisma generate",
   "rewrites": [
     {

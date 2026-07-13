@@ -1,3 +1,5 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
   "buildCommand": "node -e \"process.exit(process.versions.node.startsWith('22.') ? 0 : 1)\" && [ \"$(pnpm --version)\" = \"10.34.5\" ] && pnpm build"
 }

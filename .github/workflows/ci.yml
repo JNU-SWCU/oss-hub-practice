@@ -26,8 +26,13 @@ jobs:
         run: pnpm --filter ./backend exec prisma validate
         env:
           DIRECT_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
       - run: pnpm workspace:lint
       - run: pnpm workspace:typecheck
       - run: pnpm --filter ./backend test
       # Front tests are intentionally excluded until the front package has real test coverage.
       - run: pnpm workspace:build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e

@@ -16,8 +16,6 @@
     "test": "vitest run --config vitest.config.ts",
     "test:e2e": "playwright test",
     "check": "pnpm typecheck && pnpm test && pnpm build",
-    "legacy:dev": "pnpm dev",
-    "legacy:build": "pnpm build",
     "workspace:typecheck": "pnpm --filter './front' typecheck && pnpm --filter './backend' typecheck",
     "workspace:lint": "pnpm --filter './front' lint && pnpm --filter './backend' lint",
     "workspace:build": "pnpm --filter './front' build && pnpm --filter './backend' build"
