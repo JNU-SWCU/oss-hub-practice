@@ -7,6 +7,7 @@ import {
   type RoleId,
   competitionStatuses,
 } from "../../domain";
+import { StudentJourney } from "../StudentJourney";
 import { CompetitionCard, type Navigate, PageHeader, SectionTitle, statusLabel } from "./shared";
 
 type StatusFilter = CompetitionStatus | "all";
@@ -51,7 +52,8 @@ export function CompetitionList({ state, persona, onNavigate }: CompetitionListP
   }
 
   return (
-    <main className="page-shell">
+    <main className={persona === "student" ? "page-shell student-flow-page" : "page-shell"}>
+      {persona === "student" ? <StudentJourney current="program" /> : null}
       <PageHeader
         kicker="대회 센터"
         title="대회 접수와 GitHub 저장소 자산화"

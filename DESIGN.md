@@ -125,6 +125,22 @@ Use full-width bands with constrained inner content. Cards are only for repeated
 - **Accessibility**: numeric labels accompany every visual bar.
 - **Motion**: 180ms bar width transition.
 
+### Student Journey Stepper
+- **Structure**: compact heading, current position, and five ordered stages from consent to repository start.
+- **Variants**: desktop horizontal rail; mobile current-stage card.
+- **Spacing**: --space-2 step gap, --space-3 step padding, --space-4 container padding.
+- **States**: completed, current, upcoming; every state includes visible Korean text.
+- **Accessibility**: semantic navigation and ordered list; current state is not communicated by color alone.
+- **Motion**: none; route changes provide the state transition.
+
+### Consent Gate
+- **Structure**: student journey, plain-language data-use summary, two disclosure panels, required consent control, primary continuation action.
+- **Variants**: first student demo entry per browser tab.
+- **Spacing**: --space-6 panel padding, --space-5 column gap.
+- **States**: action disabled until consent; focus and checked states use browser-native controls.
+- **Accessibility**: real checkbox label and disabled submit state; disclosure meaning remains available without icons.
+- **Motion**: none.
+
 ## 6. Motion & Interaction
 
 | Type | Duration | Easing | Usage |

@@ -1,5 +1,6 @@
 import { ArrowLeft, FileText } from "lucide-react";
 import type { Call, MetricId, RoleId, Team } from "../../domain";
+import { StudentJourney } from "../StudentJourney";
 import {
   CompetitionDetailPanel,
   type DetailTab,
@@ -31,7 +32,8 @@ export function CompetitionDetail({
   const publicTeams = competitionTeams.filter((team) => team.status === "published");
 
   return (
-    <main className="page-shell">
+    <main className={role === "student" ? "page-shell student-flow-page" : "page-shell"}>
+      {role === "student" ? <StudentJourney current="program" /> : null}
       <button className="text-link" type="button" onClick={() => onNavigate("/competitions")}>
         <ArrowLeft size={16} />
         대회 센터
