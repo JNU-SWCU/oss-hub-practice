@@ -16,6 +16,11 @@
 | 진솔 | Designer | 같은 도메인의 화면 구조, 상태/예외 흐름, 접근성 체크 |
 | 동규 (eaststar) | Tech Lead | GitHub API 연결 구조, CI/CD, Jenkins, Compose, Nginx, SSH 보안 설계 |
 
+## 역할별 시작 문서
+
+- 디자이너: [디자이너 화면 흐름 실습](./designer-ia-walkthrough.md) → [Designer Quest](./designer-quest.md)
+- Tech Lead: [Tech Lead Quest](./tech-lead-quest.md)
+
 ## 공통 규칙
 
 - PRD에서 확인하지 않은 도메인, API, 데이터 모델은 만들지 않습니다.

@@ -4,7 +4,7 @@ import type { RoleId } from "../domain";
 
 export const landingByRole: Record<RoleId, string> = {
   public: "/public/dashboard",
-  student: "/competitions?status=open",
+  student: "/student/dashboard",
   staff: "/staff/operations",
   admin: "/admin/console",
 };
@@ -41,14 +41,14 @@ export function AppShell({ role, children, onNavigate }: AppShellProps) {
         </button>
         <nav className="app-nav" aria-label="주요 화면">
           <button type="button" onClick={() => onNavigate("/competitions")}>
-            대회 센터
+            프로그램
           </button>
           <button type="button" onClick={() => onNavigate("/public/dashboard")}>
-            공개 현황
+            공개 아카이브
           </button>
           {role === "student" ? (
             <button type="button" onClick={() => onNavigate("/student/dashboard")}>
-              내 신청
+              내 대시보드
             </button>
           ) : null}
           {role === "staff" ? (
@@ -63,10 +63,10 @@ export function AppShell({ role, children, onNavigate }: AppShellProps) {
           ) : null}
         </nav>
         <div className="account-chip">
-          <span>{roleLabels[role]}</span>
+          <span>{roleLabels[role]} 시연</span>
           <button type="button" onClick={() => onNavigate("/login")}>
             <LogOut size={15} />
-            persona 변경
+            역할 바꾸기
           </button>
         </div>
       </header>

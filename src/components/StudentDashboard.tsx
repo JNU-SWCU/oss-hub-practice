@@ -1,12 +1,14 @@
 import { Activity, Github, ShieldCheck } from "lucide-react";
 import { type DemoState, leaderboardValue } from "../domain";
+import { StudentJourney } from "./StudentJourney";
 
 type StudentDashboardProps = {
   readonly state: DemoState;
+  readonly hasApplied: boolean;
   readonly onNavigate: (path: string) => void;
 };
 
-export function StudentDashboard({ state, onNavigate }: StudentDashboardProps) {
+export function StudentDashboard({ state, hasApplied, onNavigate }: StudentDashboardProps) {
   const currentStudentGithub = "jnu-oss-1";
   const latest = state.teams[0];
   const ownedTeams = state.teams.filter((team) => team.members.includes(currentStudentGithub));
@@ -24,7 +26,8 @@ export function StudentDashboard({ state, onNavigate }: StudentDashboardProps) {
       : rankedTeams.findIndex((team) => team.id === primaryTeam.id) + 1;
 
   return (
-    <main className="page-shell">
+    <main className="page-shell student-flow-page">
+      <StudentJourney current={hasApplied ? "repository" : "dashboard"} />
       <header className="page-header">
         <p className="section-kicker">학생 대시보드</p>
         <h1>내 신청과 저장소 배정 상태</h1>
@@ -51,7 +54,9 @@ export function StudentDashboard({ state, onNavigate }: StudentDashboardProps) {
               ? "배정 완료"
               : "대기"}
           </strong>
-          <p>{latest?.repo ?? "github.com/jnu-sojoong/new-team"}</p>
+          <p className="breakable-identifier">
+            <RepositoryAddress value={latest?.repo ?? "github.com/jnu-sojoong/new-team"} />
+          </p>
         </article>
         <article className="status-card warning">
           <ShieldCheck size={20} />
@@ -80,7 +85,7 @@ export function StudentDashboard({ state, onNavigate }: StudentDashboardProps) {
             type="button"
             onClick={() => onNavigate("/competitions")}
           >
-            대회 선택
+            참여할 프로그램 둘러보기
           </button>
         </div>
         <div className="table-scroll">
@@ -107,6 +112,17 @@ export function StudentDashboard({ state, onNavigate }: StudentDashboardProps) {
         </div>
       </div>
     </main>
+  );
+}
+
+function RepositoryAddress({ value }: { readonly value: string }) {
+  const boundary = value.lastIndexOf("/") + 1;
+  return (
+    <>
+      {value.slice(0, boundary)}
+      <wbr />
+      <span className="nowrap-phrase">{value.slice(boundary)}</span>
+    </>
   );
 }
 

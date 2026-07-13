@@ -4,13 +4,33 @@ async function enterStudentApplication(page: import("@playwright/test").Page) {
   await page.goto("/login");
   await expect(page.getByRole("heading", { name: "JNU OSS Platform" })).toBeVisible();
   await page.getByRole("button", { name: /^학생/ }).click();
+
+  await expect(page).toHaveURL(/\/consent/);
+  await expect(page.getByRole("heading", { name: "활동 정보 이용에 동의해 주세요" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "학생 시작 흐름" })).toContainText(
+    "로그인과 동의",
+  );
+  await expect(page.getByRole("button", { name: "동의하고 내 대시보드로" })).toBeDisabled();
+  await page.getByLabel("개인정보 수집과 GitHub 활동 이용에 동의합니다").check();
+  await expect(page.getByRole("button", { name: "동의하고 내 대시보드로" })).toBeEnabled();
+  await page.getByRole("button", { name: "동의하고 내 대시보드로" }).click();
+
+  await expect(page).toHaveURL(/\/student\/dashboard/);
+  await expect(page.getByRole("heading", { name: "내 신청과 저장소 배정 상태" })).toBeVisible();
+  await page.getByRole("button", { name: "참여할 프로그램 둘러보기" }).click();
   await expect(page).toHaveURL(/\/competitions/);
   await expect(
     page.getByRole("heading", { name: "대회 접수와 GitHub 저장소 자산화" }),
   ).toBeVisible();
 
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   await page.getByRole("button", { name: "상세/신청" }).first().click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   await expect(page.getByRole("heading", { name: "2026 OSS 해커톤" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "학생 시작 흐름" })).toContainText(
+    "프로그램 선택",
+  );
   await page.getByRole("button", { name: "신청서 작성" }).click();
   await expect(page.getByRole("heading", { name: "2026 OSS 해커톤 신청" })).toBeVisible();
 }
@@ -25,12 +45,15 @@ test("login-first student application appears in staff review and becomes provis
   await page.getByLabel("팀 이름").fill("테스트 비전 팀");
   await page.getByLabel("팀원 GitHub ID").fill("jnu-alpha, jnu-beta");
   await page.getByRole("button", { name: "신청서 제출" }).click();
+  await expect(
+    page.getByRole("navigation", { name: "학생 시작 흐름" }).locator('[aria-current="step"]'),
+  ).toContainText("저장소 시작");
   await expect(page.getByRole("heading", { name: "내 신청과 저장소 배정 상태" })).toBeVisible();
   await expect(
     page.getByRole("table", { name: "학생 신청 이력" }).getByText("테스트 비전 팀"),
   ).toBeVisible();
 
-  await page.getByRole("button", { name: "persona 변경" }).click();
+  await page.getByRole("button", { name: "역할 바꾸기" }).click();
   await page.getByRole("button", { name: /^교직원/ }).click();
   await expect(page.getByRole("heading", { name: "교직원 공모 운영 및 검토" })).toBeVisible();
 
@@ -39,6 +62,55 @@ test("login-first student application appears in staff review and becomes provis
   await expect(reviewRow).toBeVisible();
   await reviewRow.getByRole("button", { name: "승인", exact: true }).click();
   await expect(reviewRow.getByText("저장소 배정 완료")).toBeVisible();
+
+  await page.getByRole("button", { name: "역할 바꾸기" }).click();
+  await page.getByRole("button", { name: /^학생/ }).click();
+  await expect(
+    page.getByRole("navigation", { name: "학생 시작 흐름" }).locator('[aria-current="step"]'),
+  ).toContainText("저장소 시작");
+  await expect(
+    page.getByRole("table", { name: "학생 신청 이력" }).getByText("저장소 배정 완료"),
+  ).toBeVisible();
+});
+
+test("student consent is invariant, stable in history, and reused in the tab", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("button", { name: /^학생/ }).click();
+
+  await page.locator(".consent-form").evaluate((form) => (form as HTMLFormElement).requestSubmit());
+  await expect(page).toHaveURL(/\/consent/);
+  await expect(page.getByRole("button", { name: "동의하고 내 대시보드로" })).toBeDisabled();
+
+  await page.getByLabel("개인정보 수집과 GitHub 활동 이용에 동의합니다").check();
+  await page.getByRole("button", { name: "동의하고 내 대시보드로" }).click();
+  await expect(page).toHaveURL(/\/student\/dashboard/);
+
+  await page.goBack();
+  await expect(page).toHaveURL(/\/student\/dashboard/);
+  await expect(page.getByRole("heading", { name: "내 신청과 저장소 배정 상태" })).toBeVisible();
+  await page.goForward();
+  await expect(page).toHaveURL(/\/student\/dashboard/);
+
+  await page.getByRole("button", { name: "역할 바꾸기" }).click();
+  await page.getByRole("button", { name: /^학생/ }).click();
+  await expect(page).toHaveURL(/\/student\/dashboard/);
+});
+
+test("closed programs cannot create a false repository-stage outcome", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("button", { name: /^학생/ }).click();
+  await page.getByLabel("개인정보 수집과 GitHub 활동 이용에 동의합니다").check();
+  await page.getByRole("button", { name: "동의하고 내 대시보드로" }).click();
+
+  await page.evaluate(() => {
+    window.history.pushState(null, "", "/competitions/call-6/apply");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page.getByRole("heading", { name: "신청할 수 없는 프로그램입니다" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /신청$/ })).toHaveCount(0);
+  await expect(
+    page.getByRole("navigation", { name: "학생 시작 흐름" }).locator('[aria-current="step"]'),
+  ).toContainText("프로그램 선택");
 });
 
 test("student application rejects malformed GitHub IDs before submission", async ({ page }) => {
@@ -49,7 +121,7 @@ test("student application rejects malformed GitHub IDs before submission", async
 
   await expect(page.getByText("GitHub ID 형식을 확인하세요: invalid handle")).toBeVisible();
 
-  await page.getByRole("button", { name: "persona 변경" }).click();
+  await page.getByRole("button", { name: "역할 바꾸기" }).click();
   await page.getByRole("button", { name: /^교직원/ }).click();
   await expect(
     page.getByRole("table", { name: "교직원 신청 검토 큐" }).getByText("잘못된 아이디 팀"),

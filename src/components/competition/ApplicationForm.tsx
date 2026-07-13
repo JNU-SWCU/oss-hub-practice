@@ -1,11 +1,12 @@
 import { ArrowLeft, CheckCircle2, FileText, Github, Send } from "lucide-react";
 import { useState } from "react";
 import type { Call, StudentApplicationInput } from "../../domain";
+import { StudentJourney } from "../StudentJourney";
 import type { Navigate } from "./shared";
 
 type ApplicationFormProps = {
   readonly competition: Call;
-  readonly onApply: (input: StudentApplicationInput) => void;
+  readonly onApply: (input: StudentApplicationInput) => boolean;
   readonly onNavigate: Navigate;
 };
 
@@ -36,12 +37,17 @@ export function ApplicationForm({ competition, onApply, onNavigate }: Applicatio
       return;
     }
     setError("");
-    onApply({ competitionId: competition.id, teamName, githubIds: parsedIds });
+    const submitted = onApply({ competitionId: competition.id, teamName, githubIds: parsedIds });
+    if (!submitted) {
+      setError("현재 접수 가능한 프로그램이 아닙니다.");
+      return;
+    }
     onNavigate("/student/dashboard");
   }
 
   return (
-    <main className="page-shell">
+    <main className="page-shell student-flow-page">
+      <StudentJourney current="application" />
       <button
         className="text-link"
         type="button"

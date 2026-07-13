@@ -20,9 +20,15 @@ type Route = {
   readonly reason: string;
 };
 
+const studentConsentKey = "jnu-oss-demo-student-consent";
+
 export function App() {
   const [route, setRoute] = useState<Route>(() => readRoute());
   const [role, setRole] = useState<RoleId | undefined>(undefined);
+  const [hasConsented, setHasConsented] = useState(
+    () => window.sessionStorage.getItem(studentConsentKey) === "accepted",
+  );
+  const [hasApplied, setHasApplied] = useState(false);
   const [state, setState] = useState<DemoState>(() => createInitialState());
   const [metric, setMetric] = useState<MetricId>("activity");
   const publishedTeams = useMemo(() => publicTeams(state.teams), [state.teams]);
@@ -39,25 +45,44 @@ export function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
+  useEffect(() => {
+    if (role !== "student" || route.path === "/login") return;
+    const requiredRoute = hasConsented ? "/student/dashboard" : "/consent";
+    const needsConsent = !hasConsented && route.path !== "/consent";
+    const revisitsCompletedConsent = hasConsented && route.path === "/consent";
+    if (needsConsent || revisitsCompletedConsent) {
+      replaceRoute(requiredRoute);
+      setRoute(readRoute());
+    }
+  }, [hasConsented, role, route.path]);
+
   function navigate(path: string): void {
     window.history.pushState(null, "", path);
+    window.scrollTo({ top: 0, left: 0 });
     setRoute(readRoute());
   }
 
   function enterRole(nextRole: RoleId): void {
     setRole(nextRole);
-    navigate(landingByRole[nextRole]);
+    navigate(nextRole === "student" && !hasConsented ? "/consent" : landingByRole[nextRole]);
   }
 
   function handleReset(): void {
     setState(createInitialState());
     setRole(undefined);
+    setHasConsented(false);
+    window.sessionStorage.removeItem(studentConsentKey);
+    setHasApplied(false);
     setMetric("activity");
     navigate("/login");
   }
 
-  function handleStudentApply(input: StudentApplicationInput): void {
-    setState((current) => submitStudentApplication(current, input));
+  function handleStudentApply(input: StudentApplicationInput): boolean {
+    const nextState = submitStudentApplication(state, input);
+    if (nextState === state) return false;
+    setState(nextState);
+    setHasApplied(true);
+    return true;
   }
 
   function handleApproveTeam(teamId: string): void {
@@ -106,9 +131,16 @@ export function App() {
         state={state}
         metric={metric}
         publishedTeams={publishedTeams}
+        hasConsented={hasConsented}
+        hasApplied={hasApplied}
         onMetricChange={setMetric}
         onNavigate={navigate}
         onStudentApply={handleStudentApply}
+        onConsent={() => {
+          window.sessionStorage.setItem(studentConsentKey, "accepted");
+          setHasConsented(true);
+          navigate("/student/dashboard");
+        }}
         onApproveTeam={handleApproveTeam}
         onRequestCorrection={handleRequestCorrection}
         onPublishTeam={handlePublishTeam}

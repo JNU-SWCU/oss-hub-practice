@@ -13,8 +13,10 @@ import {
   CompetitionList,
   PublicDashboard,
 } from "./CompetitionPages";
+import { ConsentPage } from "./ConsentPage";
 import { StaffWorkspace } from "./StaffWorkspace";
 import { StudentDashboard } from "./StudentDashboard";
+import { StudentJourney } from "./StudentJourney";
 
 type AppRoutesProps = {
   readonly route: string;
@@ -22,9 +24,12 @@ type AppRoutesProps = {
   readonly state: DemoState;
   readonly metric: MetricId;
   readonly publishedTeams: readonly DemoState["teams"][number][];
+  readonly hasConsented: boolean;
+  readonly hasApplied: boolean;
   readonly onMetricChange: (metric: MetricId) => void;
   readonly onNavigate: (path: string) => void;
-  readonly onStudentApply: (input: StudentApplicationInput) => void;
+  readonly onStudentApply: (input: StudentApplicationInput) => boolean;
+  readonly onConsent: () => void;
   readonly onApproveTeam: (teamId: string) => void;
   readonly onRequestCorrection: (teamId: string, reason: string) => void;
   readonly onPublishTeam: (teamId: string) => void;
@@ -40,6 +45,20 @@ type AppRoutesProps = {
 export function AppRoutes(input: AppRoutesProps) {
   const competitionId = competitionIdFromPath(input.route);
   const competition = findCompetition(input.state.calls, competitionId);
+
+  if (input.role === "student" && !input.hasConsented) {
+    return <ConsentPage onConsent={input.onConsent} />;
+  }
+
+  if (input.role === "student" && input.route === "/consent") {
+    return (
+      <StudentDashboard
+        state={input.state}
+        hasApplied={input.hasApplied}
+        onNavigate={input.onNavigate}
+      />
+    );
+  }
 
   if (input.route === "/public/dashboard") {
     return (
@@ -63,7 +82,13 @@ export function AppRoutes(input: AppRoutesProps) {
     if (input.role !== "student") {
       return <RoleRequiredNotice roleLabel="학생" onNavigate={input.onNavigate} />;
     }
-    return <StudentDashboard state={input.state} onNavigate={input.onNavigate} />;
+    return (
+      <StudentDashboard
+        state={input.state}
+        hasApplied={input.hasApplied}
+        onNavigate={input.onNavigate}
+      />
+    );
   }
 
   if (input.route === "/staff/operations") {
@@ -101,6 +126,24 @@ export function AppRoutes(input: AppRoutesProps) {
   if (input.route.endsWith("/apply") && competition !== undefined) {
     if (input.role !== "student") {
       return <StudentRequiredNotice onNavigate={input.onNavigate} />;
+    }
+    if (competition.status !== "open") {
+      return (
+        <main className="page-shell student-flow-page">
+          <StudentJourney current="program" />
+          <section className="not-found-panel">
+            <h1>신청할 수 없는 프로그램입니다</h1>
+            <p>접수 중인 프로그램을 선택해 신청서를 작성해 주세요.</p>
+            <button
+              className="primary-action"
+              type="button"
+              onClick={() => input.onNavigate("/competitions")}
+            >
+              프로그램 목록으로 이동
+            </button>
+          </section>
+        </main>
+      );
     }
     return (
       <ApplicationForm
