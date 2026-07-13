@@ -6,7 +6,7 @@ This document separates the current implementation from the approved future targ
 Current state: the repository is a pnpm workspace with three surfaces — the preserved
 root Vite React SPA prototype, an initialized `front/` package (Next.js App Router:
 `app/`, `features/`, `shared/`), and an initialized `backend/` package (NestJS layered:
-`modules/`, `database/prisma/`, `common/`, SQLite Prisma baseline). Both packages are
+`modules/`, `database/prisma/`, `common/`, PostgreSQL Prisma boundary and Vercel handler). Both packages are
 registered in `pnpm-workspace.yaml`, build and typecheck, and are intentionally
 domain-empty: no product domains, controllers, or schema models exist until the PRD
 names them.
@@ -92,7 +92,7 @@ controller -> service -> repository -> Prisma boundary
 
 | Folder | Responsibility |
 | --- | --- |
-| `backend/` | Owns the NestJS backend package (initialized, domain-empty, SQLite Prisma baseline). |
+| `backend/` | Owns the NestJS backend package (initialized, domain-empty, PostgreSQL Prisma boundary and Vercel handler). |
 | `backend/src/modules/` | Owns bounded backend modules. |
 | `backend/src/modules/<domain>/` | Owns the module, controller, DTOs, service, repository, and domain-facing types for one backend domain. |
 | `backend/src/database/` | Owns backend database integration only. |
@@ -121,10 +121,10 @@ services, and repository providers live inside `backend/src/modules/<domain>/`.
 | --- | --- |
 | repo root | Owns the preserved Vite SPA prototype files and the pnpm workspace configuration. |
 | `front/` | Initialized Next.js package (app/features/shared boundaries); domain features are added only when the PRD names them. |
-| `backend/` | Initialized NestJS package with the Prisma SQLite baseline boundary; no product API, domain module, or schema model exists yet. |
+| `backend/` | Initialized NestJS Vercel Function package with the Prisma PostgreSQL boundary; no product API, domain module, or schema model exists yet. |
 | `docs/` | Owns architecture records, plans, research, and decision records. |
 | `.env*` | Local secrets are ignored at root and package paths; only `.env.example` variants are trackable. |
-| `backend/prisma/migrations/` | Migration history is committed; local databases and generated client output are not. |
+| `backend/prisma/migrations/` | Migration history is committed; generated client output is not. |
 
 The root Vite app is a preserved prototype surface. The Next.js and NestJS
 packages are initialized scaffolds; migrating prototype behavior into them must

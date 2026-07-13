@@ -12,23 +12,24 @@
 ## Quest 2: CI/CD
 
 - [ ] GitHub Actions에서 install, lint, typecheck, test, build를 실행한다.
-- [ ] CI 성공 뒤 Jenkins webhook 또는 polling으로 CD를 시작한다.
-- [ ] Jenkins가 승인된 commit만 checkout하고 Docker image를 build/push한다.
-- [ ] 서버는 image digest를 받아 `docker compose pull`과 `docker compose up -d`를 수행한다.
+- [ ] root, `front`, `backend`를 별도 Vercel 프로젝트로 연결하고 Root Directory 차이를 설명한다.
+- [ ] PR마다 세 Preview deployment를 확인하고 CI 결과와 함께 검토한다.
+- [ ] 승인된 `main` commit만 production alias로 승격한다.
 - [ ] migration은 release 단계에서 `prisma migrate deploy`로만 실행한다.
 
-## Quest 3: 서버와 네트워크
+## Quest 3: Runtime과 network boundary
 
-- [ ] Nginx가 80/443을 받고 front/backend 내부 포트로 reverse proxy한다.
-- [ ] backend와 database 포트를 인터넷에 직접 공개하지 않는다.
-- [ ] SSH 포트 변경은 보조 조치일 뿐이며, key-only 로그인, root 로그인 금지,
-  firewall allowlist, fail2ban 또는 equivalent, 로그 모니터링을 함께 적용한다.
-- [ ] Jenkins secret, GitHub token, database URL은 서버 파일과 CI secret에만 둔다.
-- [ ] rollback image와 health check 실패 시 복구 절차를 작성한다.
+- [ ] browser에는 database secret이나 GitHub token을 노출하지 않는다.
+- [ ] Preview와 Production에 별도 Supabase project와 scope별 pooler `DATABASE_URL`을 등록하고
+  migration용 `DIRECT_URL`을 Vercel runtime에서 분리한다.
+- [ ] Runtime role은 `sslmode=require`와 최소 DML 권한만 사용하고 migrator role과 분리한다.
+- [ ] backend Preview protection을 켜고 Vercel project member 권한을 검토한다.
+- [ ] Vercel Function log에서 cold start, 4xx, 5xx를 확인하는 방법을 기록한다.
+- [ ] 마지막 정상 deployment로 Instant Rollback하고 후속 수정 PR을 만드는 절차를 작성한다.
 
 ## Agent prompt checklist
 
-- [ ] 환경: GitHub, Jenkins, Docker host, domain, Vercel/Supabase 중 명시
+- [ ] 환경: GitHub, Vercel project와 Root Directory, Supabase project, domain 중 명시
 - [ ] 보안 경계와 secret 위치 명시
 - [ ] 성공/실패 health check 명시
-- [ ] 로그, rollback, cleanup 검증 명시
+- [ ] Preview smoke check, function log, rollback 검증 명시

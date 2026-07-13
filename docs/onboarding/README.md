@@ -14,7 +14,7 @@
 | --- | --- | --- |
 | 진혜원 | Designer | 용어집, user journey, user flow, wireframe, mockup, 재사용 컴포넌트 목록 |
 | 진솔 | Designer | 같은 도메인의 화면 구조, 상태/예외 흐름, 접근성 체크 |
-| 동규 (eaststar) | Tech Lead | GitHub API 연결 구조, CI/CD, Jenkins, Compose, Nginx, SSH 보안 설계 |
+| 동규 (eaststar) | Tech Lead | GitHub API 연결 구조, GitHub Actions, Vercel/Supabase 배포와 secret 경계 설계 |
 
 ## 공통 규칙
 

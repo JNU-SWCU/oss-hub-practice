@@ -32,3 +32,14 @@ pnpm dev
 - 관리자 사용자 생성/상태 변경/API 관찰 mock
 
 추가된 PRD 외 demo 범위는 `docs/prd-additions-demo-scope.md`에 정리했습니다.
+
+## Vercel 배포
+
+이 저장소는 별도 container나 배포 서버 없이 Vercel 프로젝트 3개로 실습합니다.
+
+- 저장소 루트: 현재 디자이너용 Vite mock demo
+- `front`: 이후 제품 화면을 받을 Next.js scaffold
+- `backend`: Supabase PostgreSQL에 연결하는 NestJS Vercel Function
+
+fork부터 환경 변수, Preview 확인, rollback까지의 절차는
+[`docs/practice-repository.md`](docs/practice-repository.md)를 따릅니다.
