@@ -5,7 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import { assertPooledDatabaseUrl } from "./database/prisma/runtime-url";
 
 const POOLED_DATABASE_URL =
-  "postgresql://placeholder:placeholder@pooler.local:6543/postgres?pgbouncer=true";
+  "postgresql://placeholder:placeholder@pooler.local:6543/postgres?pgbouncer=true&sslmode=require";
 const { createAppMock } = vi.hoisted(() => ({ createAppMock: vi.fn() }));
 
 vi.mock("./app.factory", () => ({ createApp: createAppMock }));
@@ -42,6 +42,14 @@ describe("pooled database URL validator", () => {
     expect(() =>
       assertPooledDatabaseUrl("postgresql://placeholder:placeholder@pooler.local:6543/postgres"),
     ).toThrow("must include the pgbouncer=true query parameter");
+  });
+
+  it("rejects pooled URLs without required TLS", () => {
+    expect(() =>
+      assertPooledDatabaseUrl(
+        "postgresql://placeholder:placeholder@pooler.local:6543/postgres?pgbouncer=true",
+      ),
+    ).toThrow("must include the sslmode=require query parameter");
   });
 
   it("accepts a pooled PostgreSQL URL", () => {
