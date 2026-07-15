@@ -1,14 +1,23 @@
-import { ClipboardList, FileText, Github, Trophy } from "lucide-react";
+import { ClipboardList, FileText, Github, ListChecks, Trophy } from "lucide-react";
 import type { ReactNode } from "react";
-import type { Call, MetricId, Team } from "../../domain";
+import {
+  type Call,
+  type MetricId,
+  type ProgramMilestone,
+  type Team,
+  type TeamMilestoneSubmission,
+  milestoneStatusLabel,
+  submissionForMilestone,
+} from "../../domain";
 import { Leaderboard } from "../Leaderboard";
 import { PublishedAssets } from "./shared";
 
-export type DetailTab = "overview" | "apply" | "repos" | "leaderboard" | "materials";
+export type DetailTab = "overview" | "apply" | "milestones" | "repos" | "leaderboard" | "materials";
 
 export const detailTabs: readonly { readonly id: DetailTab; readonly label: string }[] = [
   { id: "overview", label: "개요" },
   { id: "apply", label: "신청/팀" },
+  { id: "milestones", label: "마일스톤" },
   { id: "repos", label: "저장소" },
   { id: "leaderboard", label: "리더보드" },
   { id: "materials", label: "자료" },
@@ -25,6 +34,8 @@ type CompetitionDetailPanelProps = {
   readonly activeTab: DetailTab;
   readonly competition: Call;
   readonly competitionTeams: readonly Team[];
+  readonly milestones: readonly ProgramMilestone[];
+  readonly submissions: readonly TeamMilestoneSubmission[];
   readonly publicTeams: readonly Team[];
   readonly metric: MetricId;
   readonly onMetricChange: (metric: MetricId) => void;
@@ -35,6 +46,8 @@ export function CompetitionDetailPanel({
   activeTab,
   competition,
   competitionTeams,
+  milestones,
+  submissions,
   publicTeams,
   metric,
   onMetricChange,
@@ -61,6 +74,18 @@ export function CompetitionDetailPanel({
         />
         <PublishedAssets teams={publicTeams} />
         <TeamTable teams={visibleTeams} audience={audience} />
+      </section>
+    );
+  }
+  if (activeTab === "milestones") {
+    return (
+      <section className="table-panel">
+        <PanelTitle
+          icon={<ListChecks size={18} />}
+          title="마일스톤 제출 흐름"
+          description="학생은 마감별 제출 상태를 확인하고, 교직원은 같은 데이터를 검토 매트릭스로 봅니다."
+        />
+        <MilestoneTracker milestones={milestones} teams={visibleTeams} submissions={submissions} />
       </section>
     );
   }
@@ -126,6 +151,81 @@ export function CompetitionDetailPanel({
       )}
     </section>
   );
+}
+
+function MilestoneTracker({
+  milestones,
+  teams,
+  submissions,
+}: {
+  readonly milestones: readonly ProgramMilestone[];
+  readonly teams: readonly Team[];
+  readonly submissions: readonly TeamMilestoneSubmission[];
+}) {
+  if (milestones.length === 0) return <p className="empty-state">아직 마일스톤이 없습니다.</p>;
+  return (
+    <div className="milestone-panel">
+      <ol className="milestone-list" aria-label="대회 마일스톤">
+        {milestones.map((milestone) => (
+          <li key={milestone.id}>
+            <span>{milestone.gate === "intake" ? "Intake" : "Full-loop"}</span>
+            <strong>{milestone.name}</strong>
+            <small>
+              {milestone.dueDate} · {deliverableLabel(milestone.deliverableType)}
+            </small>
+            <p>{milestone.guide}</p>
+          </li>
+        ))}
+      </ol>
+      <div className="table-scroll">
+        <table aria-label="대회 마일스톤 제출 현황">
+          <thead>
+            <tr>
+              <th>팀</th>
+              {milestones.map((milestone) => (
+                <th key={milestone.id}>{milestone.name}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {teams.map((team) => {
+              const teamSubmissions = submissions.filter(
+                (submission) => submission.teamId === team.id,
+              );
+              return (
+                <tr key={team.id}>
+                  <td data-label="팀">{team.name}</td>
+                  {milestones.map((milestone) => {
+                    const submission = submissionForMilestone(teamSubmissions, milestone.id);
+                    return (
+                      <td data-label={milestone.name} key={milestone.id}>
+                        {submission === undefined
+                          ? "대기"
+                          : milestoneStatusLabel(submission.status)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function deliverableLabel(type: ProgramMilestone["deliverableType"]): string {
+  switch (type) {
+    case "file":
+      return "파일";
+    case "text":
+      return "텍스트";
+    case "repo-tag":
+      return "Repo 태그";
+    case "release":
+      return "Release";
+  }
 }
 
 function PanelTitle({

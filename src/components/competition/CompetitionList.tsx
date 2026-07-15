@@ -68,6 +68,34 @@ export function CompetitionList({ state, persona, onNavigate }: CompetitionListP
         title="대회 접수와 GitHub 저장소 자산화"
         description="공지성 안내는 사업단 홈페이지가 맡고, 이 화면은 대회 신청, 팀 GitHub ID 수합, 저장소 배정, 공개 자산 확인 흐름을 담당합니다."
       />
+      {persona === "student" ? (
+        <section className="student-entry-options" aria-label="학생 참여 방식 선택">
+          <article>
+            <span>기본 경로</span>
+            <h2>목록에서 프로그램 신청</h2>
+            <p>사업단이 등록한 프로그램을 선택하고 팀명, 팀원 GitHub ID를 제출합니다.</p>
+            <button type="button" onClick={() => updateQuery({ status: "open" })}>
+              접수 중 프로그램 보기
+            </button>
+          </article>
+          <article>
+            <span>외부 활동</span>
+            <h2>목록에 없는 프로그램 등록</h2>
+            <p>이미 참여 중인 외부 해커톤, 동아리, 수업 프로젝트를 직접 등록해 검토 요청합니다.</p>
+            <button type="button" onClick={() => updateQuery({ q: "외부 프로그램" })}>
+              외부 프로그램 등록 준비
+            </button>
+          </article>
+          <article>
+            <span>GitHub 연결</span>
+            <h2>기존 저장소 가져오기</h2>
+            <p>새 저장소를 만들지 않고 기존 GitHub 저장소 URL과 팀 정보를 연결합니다.</p>
+            <button type="button" onClick={() => onNavigate("/student/dashboard")}>
+              내 상태에서 연결 확인
+            </button>
+          </article>
+        </section>
+      ) : null}
       <section className="portal-summary" aria-label="대회 현황 요약">
         <SummaryItem label="전체 대회" value={`${visibleCalls.length}건`} />
         <SummaryItem label="접수 중" value={`${openCount}건`} />

@@ -1,5 +1,5 @@
 import { ArrowLeft, FileText } from "lucide-react";
-import type { Call, MetricId, RoleId, Team } from "../../domain";
+import type { Call, DemoState, MetricId, RoleId, Team } from "../../domain";
 import { StudentJourney } from "../StudentJourney";
 import {
   CompetitionDetailPanel,
@@ -12,6 +12,7 @@ import { Fact, type Navigate, statusLabel } from "./shared";
 type CompetitionDetailProps = {
   readonly competition: Call;
   readonly role: RoleId;
+  readonly state: DemoState;
   readonly teams: readonly Team[];
   readonly metric: MetricId;
   readonly onMetricChange: (metric: MetricId) => void;
@@ -21,6 +22,7 @@ type CompetitionDetailProps = {
 export function CompetitionDetail({
   competition,
   role,
+  state,
   teams,
   metric,
   onMetricChange,
@@ -115,6 +117,10 @@ export function CompetitionDetail({
         activeTab={activeTab}
         competition={competition}
         competitionTeams={competitionTeams}
+        milestones={state.milestones.filter(
+          (milestone) => milestone.competitionId === competition.id,
+        )}
+        submissions={state.submissions}
         publicTeams={publicTeams}
         metric={metric}
         onMetricChange={onMetricChange}

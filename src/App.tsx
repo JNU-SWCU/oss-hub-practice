@@ -7,6 +7,7 @@ import {
   addManagedUser,
   approveTeam,
   createInitialState,
+  createProgramDraft,
   publicTeams,
   publishTeamAsset,
   requestTeamCorrection,
@@ -14,7 +15,14 @@ import {
   submitStudentApplication,
   updateManagedUserStatus,
 } from "./domain";
-import type { DemoState, ManagedUser, MetricId, RoleId, StudentApplicationInput } from "./domain";
+import type {
+  DemoState,
+  ManagedUser,
+  MetricId,
+  ProgramDraftInput,
+  RoleId,
+  StudentApplicationInput,
+} from "./domain";
 
 type Route = {
   readonly path: string;
@@ -33,16 +41,32 @@ export function App() {
   const [state, setState] = useState<DemoState>(() => createInitialState());
   const [metric, setMetric] = useState<MetricId>("activity");
   const publishedTeams = useMemo(() => publicTeams(state.teams), [state.teams]);
+  const loginSummary = useMemo(
+    () => ({
+      totalPrograms: state.calls.length,
+      openPrograms: state.calls.filter((call) => call.status === "open").length,
+      reviewQueue: state.teams.filter(
+        (team) =>
+          team.status === "submitted" ||
+          team.status === "correction" ||
+          team.status === "provisioned",
+      ).length,
+      publishedAssets: publishedTeams.length,
+    }),
+    [publishedTeams.length, state.calls, state.teams],
+  );
 
   useEffect(() => {
     if (window.location.pathname === "/") {
       replaceRoute("/login");
       setRoute(readRoute());
     }
+
     function handlePopState(event: PopStateEvent): void {
       if (hasRoleHistoryState(event.state)) setRole(roleFromHistoryState(event.state));
       setRoute(readRoute());
     }
+
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
@@ -103,6 +127,10 @@ export function App() {
     setState((current) => publishTeamAsset(current, teamId));
   }
 
+  function handleCreateProgramDraft(input: ProgramDraftInput): void {
+    setState((current) => createProgramDraft(current, input));
+  }
+
   function handleAddUser(user: ManagedUser): void {
     setState((current) => addManagedUser(current, user));
   }
@@ -119,6 +147,7 @@ export function App() {
     return (
       <LoginPage
         notice={route.reason}
+        summary={loginSummary}
         onLogin={enterRole}
         onReset={handleReset}
         onNavigate={navigate}
@@ -142,7 +171,8 @@ export function App() {
   if (role === undefined) {
     return (
       <LoginPage
-        notice="먼저 persona를 선택해야 하는 mock route입니다."
+        notice="먼저 역할을 선택해야 접근할 수 있습니다."
+        summary={loginSummary}
         onLogin={enterRole}
         onReset={handleReset}
         onNavigate={navigate}
@@ -171,6 +201,7 @@ export function App() {
         onApproveTeam={handleApproveTeam}
         onRequestCorrection={handleRequestCorrection}
         onPublishTeam={handlePublishTeam}
+        onCreateProgramDraft={handleCreateProgramDraft}
         onAddUser={handleAddUser}
         onUpdateUserStatus={handleUpdateUserStatus}
         onSetApiMode={(apiMode) => setState((current) => setApiMode(current, apiMode))}
@@ -193,7 +224,7 @@ function replaceRoute(path: string, role?: RoleId): void {
 
 function reasonText(reason: string | null): string {
   if (reason === "student-required") {
-    return "신청서는 학생 persona에서만 접근하는 mock route입니다.";
+    return "신청서는 학생 역할에서만 접근할 수 있습니다.";
   }
   return "";
 }

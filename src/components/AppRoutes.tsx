@@ -3,6 +3,7 @@ import type {
   DemoState,
   ManagedUser,
   MetricId,
+  ProgramDraftInput,
   RoleId,
   StudentApplicationInput,
 } from "../domain";
@@ -33,6 +34,7 @@ type AppRoutesProps = {
   readonly onApproveTeam: (teamId: string) => void;
   readonly onRequestCorrection: (teamId: string, reason: string) => void;
   readonly onPublishTeam: (teamId: string) => void;
+  readonly onCreateProgramDraft: (input: ProgramDraftInput) => void;
   readonly onAddUser: (user: ManagedUser) => void;
   readonly onUpdateUserStatus: (
     userId: string,
@@ -104,6 +106,7 @@ export function AppRoutes(input: AppRoutesProps) {
           onApproveTeam={input.onApproveTeam}
           onRequestCorrection={input.onRequestCorrection}
           onPublishTeam={input.onPublishTeam}
+          onCreateProgramDraft={input.onCreateProgramDraft}
         />
       </main>
     );
@@ -161,6 +164,7 @@ export function AppRoutes(input: AppRoutesProps) {
       <CompetitionDetail
         competition={visibleCompetition}
         role={input.role}
+        state={input.state}
         teams={input.state.teams}
         metric={input.metric}
         onMetricChange={input.onMetricChange}

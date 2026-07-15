@@ -78,6 +78,38 @@ test("browser history restores the persona before returning to its role route", 
   await expect(page.getByRole("heading", { name: "교직원 공모 운영 및 검토" })).toBeVisible();
 });
 
+test("information guide explains the final IA gates and role flows", async ({ page }) => {
+  await page.goto("/information");
+
+  await expect(page.getByRole("heading", { name: "학생 온보딩과 신청" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "교직원 운영 흐름" })).toBeVisible();
+  await expect(page.getByText("8/15 Intake")).toBeVisible();
+  await expect(page.getByText("8/27 Full-loop")).toBeVisible();
+});
+
+test("student dashboard shows IA deadline timeline and milestone checklist", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("button", { name: /^학생/ }).click();
+  await page.getByLabel("개인정보 수집과 GitHub 활동 이용에 동의합니다").check();
+  await page.getByRole("button", { name: "동의하고 내 대시보드로" }).click();
+
+  await expect(page.getByRole("heading", { name: "전체 마감 타임라인" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "마일스톤 체크리스트" })).toBeVisible();
+  const checklist = page.getByRole("table", { name: "학생 마일스톤 체크리스트" });
+  await expect(checklist.getByRole("cell", { name: "신청서/팀 확정" })).toBeVisible();
+  await expect(checklist.getByRole("cell", { name: "Repo 초대" })).toBeVisible();
+});
+
+test("staff operations include milestone matrix and reminder digest", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("button", { name: /^교직원/ }).click();
+
+  await expect(page.getByRole("heading", { name: "팀 x 마일스톤 매트릭스" })).toBeVisible();
+  await expect(page.getByRole("table", { name: "팀별 마일스톤 제출 매트릭스" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "리마인더 이메일" })).toBeVisible();
+  await expect(page.getByText("마감 3일 전", { exact: true })).toBeVisible();
+});
+
 test("role state survives reload, reset clears it, and admin includes staff screens", async ({
   page,
 }) => {
@@ -227,7 +259,7 @@ test("public detail hides internal teams and member GitHub IDs", async ({ page }
   await page.getByRole("button", { name: "상세 보기" }).first().click();
 
   await expect(page.getByRole("button", { name: "신청/팀" })).toHaveCount(0);
-  await page.getByRole("button", { name: "저장소" }).click();
+  await page.getByRole("button", { name: "저장소", exact: true }).click();
   await expect(page.getByRole("table", { name: "공개 대회 저장소" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "나르샤 OSS" })).toBeVisible();
   await expect(page.getByText("광주 데이터 크루")).toHaveCount(0);

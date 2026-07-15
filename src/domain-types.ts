@@ -20,6 +20,21 @@ export type TeamStatus = (typeof teamStatuses)[number];
 export const userRoles = ["student", "staff", "admin"] as const;
 export type UserRole = (typeof userRoles)[number];
 
+export const milestoneStatuses = [
+  "not-started",
+  "ready",
+  "submitted",
+  "needs-revision",
+  "approved",
+] as const;
+export type MilestoneStatus = (typeof milestoneStatuses)[number];
+
+export const deliverableTypes = ["file", "text", "repo-tag", "release"] as const;
+export type DeliverableType = (typeof deliverableTypes)[number];
+
+export const programGates = ["intake", "full-loop"] as const;
+export type ProgramGate = (typeof programGates)[number];
+
 export type Student = {
   readonly id: string;
   readonly name: string;
@@ -62,6 +77,25 @@ export type Repository = {
   readonly license: string;
   readonly language: string;
   readonly lastPushed: string;
+};
+
+export type ProgramMilestone = {
+  readonly id: string;
+  readonly competitionId: string;
+  readonly name: string;
+  readonly dueDate: string;
+  readonly deliverableType: DeliverableType;
+  readonly guide: string;
+  readonly gate: ProgramGate;
+};
+
+export type TeamMilestoneSubmission = {
+  readonly id: string;
+  readonly teamId: string;
+  readonly milestoneId: string;
+  readonly status: MilestoneStatus;
+  readonly submittedAt?: string | undefined;
+  readonly reviewerNote?: string | undefined;
 };
 
 export type ManagedUser = {
@@ -113,6 +147,8 @@ export type DemoState = {
   readonly students: readonly Student[];
   readonly teams: readonly Team[];
   readonly repositories: readonly Repository[];
+  readonly milestones: readonly ProgramMilestone[];
+  readonly submissions: readonly TeamMilestoneSubmission[];
   readonly users: readonly ManagedUser[];
   readonly calls: readonly Call[];
   readonly activity: readonly ActivityEvent[];
@@ -124,4 +160,12 @@ export type StudentApplicationInput = {
   readonly competitionId: string;
   readonly teamName: string;
   readonly githubIds: readonly string[];
+};
+
+export type ProgramDraftInput = {
+  readonly title: string;
+  readonly host: string;
+  readonly category: readonly string[];
+  readonly deadline: string;
+  readonly outputType: string;
 };
