@@ -29,18 +29,39 @@ export function StaffWorkspace({
   onCreateProgramDraft,
 }: StaffWorkspaceProps) {
   const [programTitle, setProgramTitle] = useState<string>(initialProgramDraft.title);
+  const [period, setPeriod] = useState<string>(initialProgramDraft.period);
   const [deadline, setDeadline] = useState<string>(initialProgramDraft.deadline);
+  const [teamSize, setTeamSize] = useState<string>(initialProgramDraft.teamSize);
   const [categoryText, setCategoryText] = useState<string>(initialProgramDraft.categoryText);
   const [outputType, setOutputType] = useState<string>(initialProgramDraft.outputType);
+  const [applicationFields, setApplicationFields] = useState<string>(
+    initialProgramDraft.applicationFields,
+  );
+  const [milestoneName, setMilestoneName] = useState<string>(initialProgramDraft.milestoneName);
+  const [milestoneDueDate, setMilestoneDueDate] = useState<string>(
+    initialProgramDraft.milestoneDueDate,
+  );
+  const [deliverableType, setDeliverableType] = useState<string>(
+    initialProgramDraft.deliverableType,
+  );
+  const [reminderPolicy, setReminderPolicy] = useState<string>(initialProgramDraft.reminderPolicy);
   const [selectedProgramId, setSelectedProgramId] = useState(state.calls[0]?.id ?? "");
   const [reviewQuery, setReviewQuery] = useState("");
   const [pendingAction, setPendingAction] = useState<PendingStaffAction | undefined>(undefined);
+  const [correctionReason, setCorrectionReason] = useState("GitHub ID와 제출 동의서를 확인하세요.");
   const [toast, setToast] = useState("");
   const hasUnsavedProgramDraft =
     programTitle !== initialProgramDraft.title ||
+    period !== initialProgramDraft.period ||
     deadline !== initialProgramDraft.deadline ||
+    teamSize !== initialProgramDraft.teamSize ||
     categoryText !== initialProgramDraft.categoryText ||
-    outputType !== initialProgramDraft.outputType;
+    outputType !== initialProgramDraft.outputType ||
+    applicationFields !== initialProgramDraft.applicationFields ||
+    milestoneName !== initialProgramDraft.milestoneName ||
+    milestoneDueDate !== initialProgramDraft.milestoneDueDate ||
+    deliverableType !== initialProgramDraft.deliverableType ||
+    reminderPolicy !== initialProgramDraft.reminderPolicy;
   useUnsavedChangesWarning(hasUnsavedProgramDraft);
   const reviewTargets = state.teams.filter(
     (team) =>
@@ -56,10 +77,27 @@ export function StaffWorkspace({
       title: programTitle,
       host: "전남대학교 소프트웨어중심대학사업단",
       category: categories,
+      period,
       deadline,
+      teamSize,
       outputType,
+      applicationFields: applicationFields
+        .split(",")
+        .map((field) => field.trim())
+        .filter((field) => field.length > 0),
+      milestoneName,
+      milestoneDueDate,
+      deliverableType,
+      reminderPolicy,
     });
     setToast("프로그램 초안을 만들었습니다.");
+  }
+
+  function handlePendingActionChange(action: PendingStaffAction): void {
+    if (action.kind === "correction") {
+      setCorrectionReason("GitHub ID와 제출 동의서를 확인하세요.");
+    }
+    setPendingAction(action);
   }
 
   function confirmPendingAction(): void {
@@ -71,10 +109,11 @@ export function StaffWorkspace({
         setToast(`${team?.name ?? "선택한 팀"}을 승인했습니다.`);
         break;
       case "correction":
-        onRequestCorrection(
-          pendingAction.teamId,
-          "팀원 GitHub ID와 제출 동의서 metadata를 다시 확인하세요.",
-        );
+        if (correctionReason.trim().length === 0) {
+          setToast("보완 요청 사유를 입력해야 합니다.");
+          return;
+        }
+        onRequestCorrection(pendingAction.teamId, correctionReason);
         setToast(`${team?.name ?? "선택한 팀"}에 보완 요청을 보냈습니다.`);
         break;
       case "publish":
@@ -94,7 +133,17 @@ export function StaffWorkspace({
         request={pendingActionRequest(pendingAction, state)}
         onCancel={() => setPendingAction(undefined)}
         onConfirm={confirmPendingAction}
-      />
+      >
+        {pendingAction?.kind === "correction" ? (
+          <label className="dialog-field">
+            <span>보완 요청 사유</span>
+            <textarea
+              value={correctionReason}
+              onChange={(event) => setCorrectionReason(event.target.value)}
+            />
+          </label>
+        ) : null}
+      </ConfirmDialog>
       <div className="workspace-intro page-header">
         <p className="section-kicker">교직원 운영</p>
         <h2>교직원 공모 운영 및 검토</h2>
@@ -124,14 +173,28 @@ export function StaffWorkspace({
         state={state}
         selectedProgramId={selectedProgramId}
         programTitle={programTitle}
+        period={period}
         deadline={deadline}
+        teamSize={teamSize}
         categoryText={categoryText}
         outputType={outputType}
+        applicationFields={applicationFields}
+        milestoneName={milestoneName}
+        milestoneDueDate={milestoneDueDate}
+        deliverableType={deliverableType}
+        reminderPolicy={reminderPolicy}
         onSelectedProgramChange={setSelectedProgramId}
         onProgramTitleChange={setProgramTitle}
+        onPeriodChange={setPeriod}
         onDeadlineChange={setDeadline}
+        onTeamSizeChange={setTeamSize}
         onCategoryTextChange={setCategoryText}
         onOutputTypeChange={setOutputType}
+        onApplicationFieldsChange={setApplicationFields}
+        onMilestoneNameChange={setMilestoneName}
+        onMilestoneDueDateChange={setMilestoneDueDate}
+        onDeliverableTypeChange={setDeliverableType}
+        onReminderPolicyChange={setReminderPolicy}
         onCreateProgram={handleCreateProgram}
       />
       <StaffMilestoneOps state={state} selectedProgramId={selectedProgramId} />
@@ -139,7 +202,7 @@ export function StaffWorkspace({
         teams={reviewTargets}
         reviewQuery={reviewQuery}
         onReviewQueryChange={setReviewQuery}
-        onPendingActionChange={setPendingAction}
+        onPendingActionChange={handlePendingActionChange}
       />
     </div>
   );

@@ -64,6 +64,7 @@ export type Team = {
   readonly lastActive: string;
   readonly reportState: "not-started" | "draft" | "submitted";
   readonly consentState: "missing" | "uploaded";
+  readonly joinCode?: string | undefined;
   readonly correctionReason?: string | undefined;
 };
 
@@ -160,12 +161,21 @@ export type StudentApplicationInput = {
   readonly competitionId: string;
   readonly teamName: string;
   readonly githubIds: readonly string[];
+  readonly teamMode: "create" | "join";
+  readonly joinCode?: string | undefined;
 };
 
 export type ProgramDraftInput = {
   readonly title: string;
   readonly host: string;
   readonly category: readonly string[];
+  readonly period: string;
   readonly deadline: string;
+  readonly teamSize: string;
   readonly outputType: string;
+  readonly applicationFields: readonly string[];
+  readonly milestoneName: string;
+  readonly milestoneDueDate: string;
+  readonly deliverableType: string;
+  readonly reminderPolicy: string;
 };

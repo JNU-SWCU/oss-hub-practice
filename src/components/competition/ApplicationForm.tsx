@@ -1,4 +1,13 @@
-import { ArrowLeft, CheckCircle2, FileText, Github, Plus, Send, UserPlus } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ClipboardList,
+  FileText,
+  Github,
+  Plus,
+  Send,
+  UserPlus,
+} from "lucide-react";
 import { useState } from "react";
 import type { Call, StudentApplicationInput } from "../../domain";
 import { useUnsavedChangesWarning } from "../CompliancePrimitives";
@@ -17,16 +26,22 @@ const initialApplicationDraft = {
   summary: "전남대학교 학생들이 교과/비교과 활동에서 만든 OSS 산출물을 저장소로 공개합니다.",
 } as const;
 
+type TeamMode = "create" | "join";
+
 export function ApplicationForm({ competition, onApply, onNavigate }: ApplicationFormProps) {
   const [teamName, setTeamName] = useState<string>(initialApplicationDraft.teamName);
   const [githubIds, setGithubIds] = useState<string>(initialApplicationDraft.githubIds);
   const [summary, setSummary] = useState<string>(initialApplicationDraft.summary);
+  const [teamMode, setTeamMode] = useState<TeamMode>("create");
+  const [joinCode, setJoinCode] = useState<string>("OSS-2026");
   const [error, setError] = useState("");
   const previewIds = includeApplicantGithub(parseGithubIds(githubIds));
   const hasUnsavedApplicationDraft =
     teamName !== initialApplicationDraft.teamName ||
     githubIds !== initialApplicationDraft.githubIds ||
-    summary !== initialApplicationDraft.summary;
+    summary !== initialApplicationDraft.summary ||
+    teamMode !== "create" ||
+    joinCode !== "OSS-2026";
   useUnsavedChangesWarning(hasUnsavedApplicationDraft);
 
   function handleSubmit(): void {
@@ -45,8 +60,28 @@ export function ApplicationForm({ competition, onApply, onNavigate }: Applicatio
       setError("팀 이름과 작품 설명을 입력해야 합니다.");
       return;
     }
+    if (teamMode === "join" && joinCode.trim().length === 0) {
+      setError("기존 팀에 합류하려면 참여코드를 입력해야 합니다.");
+      return;
+    }
+    const teamSizeRange = parseTeamSizeRange(competition.teamSize);
+    if (teamSizeRange !== undefined) {
+      const memberCount = parsedIds.length;
+      if (memberCount < teamSizeRange.min || memberCount > teamSizeRange.max) {
+        setError(
+          `${competition.teamSize} 기준에 맞게 팀원을 입력하세요. 현재 ${memberCount}명입니다.`,
+        );
+        return;
+      }
+    }
     setError("");
-    const submitted = onApply({ competitionId: competition.id, teamName, githubIds: parsedIds });
+    const submitted = onApply({
+      competitionId: competition.id,
+      teamName,
+      githubIds: parsedIds,
+      teamMode,
+      joinCode: teamMode === "join" ? joinCode.trim() : undefined,
+    });
     if (!submitted) {
       setError("현재 접수 가능한 프로그램이 아닙니다.");
       return;
@@ -66,19 +101,35 @@ export function ApplicationForm({ competition, onApply, onNavigate }: Applicatio
       </button>
       <section className="form-status-grid">
         <form className="form-panel" onSubmit={(event) => event.preventDefault()}>
-          <p className="section-kicker">프로젝트 공간</p>
+          <p className="section-kicker">신청 1/3 - 팀 구성 2/3 - 저장소 준비 3/3</p>
           <h1>{competition.title} 참여 공간 만들기</h1>
+          <ol className="application-step-list" aria-label="신청 진행 단계">
+            <li>
+              <strong>1/3 신청 정보</strong>
+              <span>기본 정보와 교직원 추가 질문을 확인합니다.</span>
+            </li>
+            <li>
+              <strong>2/3 팀 구성</strong>
+              <span>팀 생성 또는 참여코드 합류와 인원 범위를 점검합니다.</span>
+            </li>
+            <li>
+              <strong>3/3 저장소 준비</strong>
+              <span>승인 후 JNU-SWCU 저장소 초대 대기 상태로 전환됩니다.</span>
+            </li>
+          </ol>
           <div className="readonly-grid" aria-label="신청자 기본 정보">
             <Info label="이름" value="전남학생 1" />
             <Info label="학번" value="20260001" />
             <Info label="이메일" value="student1@jnu.ac.kr" />
             <Info label="휴대전화" value="010-3401-8801" />
+            <Info label="교직원 추가 항목" value="참여 동기, 공개 동의 확인" />
+            <Info label="팀 인원 기준" value={competition.teamSize} />
           </div>
           <section className="project-workspace-card" aria-label="프로젝트 공간 미리보기">
             <div>
               <span>GitHub workspace</span>
               <h2>{teamName.trim().length > 0 ? teamName : "새 프로젝트 공간"}</h2>
-              <p>팀원을 초대하고, 승인 후 배정될 저장소와 연결할 공간입니다.</p>
+              <p>팀원을 초대하고, 승인 후 JNU-SWCU 저장소와 연결할 공간입니다.</p>
             </div>
             <div className="invite-list" aria-label="초대할 팀원">
               {previewIds.map((githubId) => (
@@ -98,18 +149,46 @@ export function ApplicationForm({ competition, onApply, onNavigate }: Applicatio
             <input value={teamName} onChange={(event) => setTeamName(event.target.value)} />
             <small>프로젝트 공간 이름으로 사용됩니다.</small>
           </label>
+          <fieldset className="choice-fieldset">
+            <legend>팀 구성 방식</legend>
+            <label>
+              <input
+                type="radio"
+                name="team-mode"
+                checked={teamMode === "create"}
+                onChange={() => setTeamMode("create")}
+              />
+              새 팀 만들기
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="team-mode"
+                checked={teamMode === "join"}
+                onChange={() => setTeamMode("join")}
+              />
+              참여코드로 합류
+            </label>
+          </fieldset>
+          <label>
+            <span>참여코드</span>
+            <input value={joinCode} onChange={(event) => setJoinCode(event.target.value)} />
+            <small>기존 팀에 합류할 때 교직원 또는 팀장이 공유한 코드를 확인합니다.</small>
+          </label>
           <label>
             <span>팀원 GitHub ID</span>
             <input value={githubIds} onChange={(event) => setGithubIds(event.target.value)} />
             <small>신청자 본인은 자동 포함됩니다. 초대할 팀원을 쉼표로 구분합니다.</small>
           </label>
           <label>
-            <span>작품 설명</span>
+            <span>작품 설명 및 참여 동기</span>
             <textarea value={summary} onChange={(event) => setSummary(event.target.value)} />
           </label>
           <div className="file-row">
             <UserPlus size={18} />
-            <span>생성하면 팀원 초대 요청과 저장소 연결 대기 상태가 함께 만들어집니다.</span>
+            <span>
+              생성하면 팀원 초대 요청과 JNU-SWCU 저장소 연결 대기 상태가 함께 만들어집니다.
+            </span>
           </div>
           {error.length > 0 ? <p className="error-text">{error}</p> : null}
           <button className="primary-action" type="button" onClick={handleSubmit}>
@@ -129,6 +208,12 @@ export function ApplicationForm({ competition, onApply, onNavigate }: Applicatio
             <span>개인정보 제공 동의서</span>
             <strong>파일 제출 예정</strong>
             <p>데모에서는 실제 파일 업로드 없이 제출 항목만 표시합니다.</p>
+          </article>
+          <article className="status-card">
+            <ClipboardList size={20} />
+            <span>신청폼 계약</span>
+            <strong>필수 + 교직원 추가 항목</strong>
+            <p>팀 인원, 참여코드, 공개 동의 항목을 화면에서 확인합니다.</p>
           </article>
         </aside>
       </section>
@@ -155,4 +240,15 @@ function parseGithubIds(value: string): readonly string[] {
 function includeApplicantGithub(githubIds: readonly string[]): readonly string[] {
   if (githubIds.includes(currentApplicantGithub)) return githubIds;
   return [currentApplicantGithub, ...githubIds];
+}
+
+function parseTeamSizeRange(
+  value: string,
+): { readonly min: number; readonly max: number } | undefined {
+  const match = /(\d+)\D+(\d+)/.exec(value);
+  if (match === null) return undefined;
+  const min = Number(match[1]);
+  const max = Number(match[2]);
+  if (!Number.isInteger(min) || !Number.isInteger(max) || min > max) return undefined;
+  return { min, max };
 }

@@ -6,14 +6,28 @@ type StaffProgramOpsProps = {
   readonly state: DemoState;
   readonly selectedProgramId: string;
   readonly programTitle: string;
+  readonly period: string;
   readonly deadline: string;
+  readonly teamSize: string;
   readonly categoryText: string;
   readonly outputType: string;
+  readonly applicationFields: string;
+  readonly milestoneName: string;
+  readonly milestoneDueDate: string;
+  readonly deliverableType: string;
+  readonly reminderPolicy: string;
   readonly onSelectedProgramChange: (programId: string) => void;
   readonly onProgramTitleChange: (value: string) => void;
+  readonly onPeriodChange: (value: string) => void;
   readonly onDeadlineChange: (value: string) => void;
+  readonly onTeamSizeChange: (value: string) => void;
   readonly onCategoryTextChange: (value: string) => void;
   readonly onOutputTypeChange: (value: string) => void;
+  readonly onApplicationFieldsChange: (value: string) => void;
+  readonly onMilestoneNameChange: (value: string) => void;
+  readonly onMilestoneDueDateChange: (value: string) => void;
+  readonly onDeliverableTypeChange: (value: string) => void;
+  readonly onReminderPolicyChange: (value: string) => void;
   readonly onCreateProgram: () => void;
 };
 
@@ -21,14 +35,28 @@ export function StaffProgramOps({
   state,
   selectedProgramId,
   programTitle,
+  period,
   deadline,
+  teamSize,
   categoryText,
   outputType,
+  applicationFields,
+  milestoneName,
+  milestoneDueDate,
+  deliverableType,
+  reminderPolicy,
   onSelectedProgramChange,
   onProgramTitleChange,
+  onPeriodChange,
   onDeadlineChange,
+  onTeamSizeChange,
   onCategoryTextChange,
   onOutputTypeChange,
+  onApplicationFieldsChange,
+  onMilestoneNameChange,
+  onMilestoneDueDateChange,
+  onDeliverableTypeChange,
+  onReminderPolicyChange,
   onCreateProgram,
 }: StaffProgramOpsProps) {
   const selectedProgram =
@@ -49,8 +77,17 @@ export function StaffProgramOps({
           />
         </label>
         <label>
+          <span>운영 기간</span>
+          <input value={period} onChange={(event) => onPeriodChange(event.target.value)} />
+        </label>
+        <label>
           <span>마감일</span>
           <input value={deadline} onChange={(event) => onDeadlineChange(event.target.value)} />
+        </label>
+        <label>
+          <span>팀 인원</span>
+          <input value={teamSize} onChange={(event) => onTeamSizeChange(event.target.value)} />
+          <small>예: 2-4명. 학생 신청 단계에서 같은 기준을 보여줍니다.</small>
         </label>
         <label>
           <span>카테고리</span>
@@ -63,6 +100,51 @@ export function StaffProgramOps({
         <label>
           <span>산출물</span>
           <input value={outputType} onChange={(event) => onOutputTypeChange(event.target.value)} />
+        </label>
+        <label>
+          <span>신청폼 항목</span>
+          <input
+            value={applicationFields}
+            onChange={(event) => onApplicationFieldsChange(event.target.value)}
+          />
+          <small>기본 항목 외에 교직원이 추가로 확인할 질문입니다.</small>
+        </label>
+        <fieldset className="choice-fieldset">
+          <legend>마일스톤 설정</legend>
+          <label>
+            <span>마일스톤명</span>
+            <input
+              value={milestoneName}
+              onChange={(event) => onMilestoneNameChange(event.target.value)}
+            />
+          </label>
+          <label>
+            <span>제출 마감</span>
+            <input
+              value={milestoneDueDate}
+              onChange={(event) => onMilestoneDueDateChange(event.target.value)}
+            />
+          </label>
+          <label>
+            <span>제출물 유형</span>
+            <select
+              value={deliverableType}
+              onChange={(event) => onDeliverableTypeChange(event.target.value)}
+            >
+              <option value="repo-tag">저장소 태그</option>
+              <option value="release">GitHub Release</option>
+              <option value="file">파일</option>
+              <option value="text">텍스트</option>
+            </select>
+          </label>
+        </fieldset>
+        <label>
+          <span>알림 설정</span>
+          <input
+            value={reminderPolicy}
+            onChange={(event) => onReminderPolicyChange(event.target.value)}
+          />
+          <small>마감 알림 메일 정책을 시연 데이터로 기록합니다.</small>
         </label>
         <button className="primary-action" type="button" onClick={onCreateProgram}>
           <PlusCircle size={18} />

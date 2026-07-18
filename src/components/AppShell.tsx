@@ -98,6 +98,10 @@ export function AppShell({ role, children, onNavigate }: AppShellProps) {
           </button>
         </div>
       </header>
+      <div className="demo-mode-banner" role="note">
+        프론트엔드 시연 모드입니다. 실제 GitHub OAuth와 서버 DB 없이 브라우저에 데모 상태를
+        저장합니다.
+      </div>
       {children}
     </div>
   );

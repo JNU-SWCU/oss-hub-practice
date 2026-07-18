@@ -182,6 +182,8 @@ button {
   padding: 28px 16px;
   background: radial-gradient(circle at 10% 30%, rgba(255, 224, 143, 0.22), transparent 28%),
     radial-gradient(circle at 85% 62%, rgba(183, 154, 91, 0.1), transparent 34%), #f5f0e8;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 h1,
@@ -321,6 +323,19 @@ p {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.6;
+}
+
+.demo-auth-note {
+  margin: -4px 0 0;
+  padding: 10px 12px;
+  color: #705315;
+  background: #fff4cf;
+  border: 1px solid #ead187;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.55;
+  text-align: start;
 }
 
 .service-intro {
@@ -1661,6 +1676,8 @@ th {
   padding-block: 0 48px;
   color: var(--text-primary);
   background: var(--surface-primary);
+  word-break: keep-all;
+  overflow-wrap: break-word;
   --surface-primary: #f5f0e8;
   --surface-secondary: #ffffff;
   --surface-elevated: #fbf7ef;
@@ -1771,6 +1788,20 @@ th {
 
 .app-shell .account-chip > span {
   color: var(--muted);
+}
+
+.app-shell .demo-mode-banner {
+  position: sticky;
+  z-index: 20;
+  inset-block-start: 60px;
+  inline-size: 100%;
+  padding: 9px 40px;
+  color: #705315;
+  background: #fff4cf;
+  border-block-end: 1px solid #ead187;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.5;
 }
 
 .app-shell .page-shell {
@@ -2146,6 +2177,23 @@ th {
   line-height: 1.62;
 }
 
+.app-shell .dialog-field {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+}
+
+.app-shell .dialog-field span {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.app-shell .dialog-field textarea {
+  min-block-size: 96px;
+  resize: vertical;
+}
+
 .app-shell .dialog-actions {
   grid-column: 1 / -1;
   display: flex;
@@ -2498,6 +2546,8 @@ th {
   background: var(--surface-secondary);
   border-color: var(--border-control);
   border-radius: 8px;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 .app-shell input:focus,
@@ -2506,6 +2556,43 @@ th {
 .app-shell button:focus-visible {
   outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
+}
+
+.app-shell .choice-fieldset {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border-control);
+  border-radius: 8px;
+}
+
+.app-shell .choice-fieldset legend {
+  padding-inline: 6px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.app-shell .choice-fieldset label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.app-shell .choice-fieldset input[type="radio"] {
+  inline-size: 16px;
+  block-size: 16px;
+}
+
+.app-shell .choice-fieldset label:has(input:not([type="radio"])),
+.app-shell .choice-fieldset label:has(select) {
+  display: grid;
+  align-items: stretch;
 }
 
 .app-shell .student-flow-page {
@@ -2520,6 +2607,7 @@ th {
 .app-shell .student-entry-options article,
 .app-shell .materials-grid article,
 .app-shell .readonly-grid div,
+.app-shell .application-step-list li,
 .app-shell .audit-item,
 .app-shell .empty-state,
 .app-shell .progress-strip article,
@@ -2584,6 +2672,33 @@ th {
 
 .app-shell .readonly-grid div:nth-child(3n) strong {
   color: var(--point-blue);
+}
+
+.app-shell .application-step-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.app-shell .application-step-list li {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+}
+
+.app-shell .application-step-list strong {
+  color: var(--point-green);
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.app-shell .application-step-list span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .app-shell .student-setup-page {
@@ -2915,6 +3030,11 @@ th {
     padding: 14px 18px;
   }
 
+  .app-shell .demo-mode-banner {
+    position: static;
+    padding-inline: 18px;
+  }
+
   .app-shell .app-nav {
     gap: 8px 18px;
   }
@@ -2936,6 +3056,11 @@ th {
   }
 
   .app-shell .student-entry-options {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell .application-step-list,
+  .app-shell .choice-fieldset {
     grid-template-columns: 1fr;
   }
 
@@ -2994,6 +3119,17 @@ th {
   .app-shell .workspace-intro.page-header h2,
   .app-shell .setup-header h1 {
     font-size: 22px;
+  }
+
+  .app-shell .student-flow-page .form-panel h1 {
+    font-size: 20px;
+    word-break: keep-all;
+    overflow-wrap: normal;
+  }
+
+  .app-shell .confirm-dialog {
+    inline-size: calc(100% - 32px);
+    padding: 18px;
   }
 
   .app-shell .setup-panel,

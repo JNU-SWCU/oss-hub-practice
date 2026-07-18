@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle2, LoaderCircle, RefreshCcw } from "lucide-react";
+import type { ReactNode } from "react";
 import { useEffect } from "react";
 
 export type ConfirmRequest = {
@@ -12,9 +13,10 @@ type ConfirmDialogProps = {
   readonly request: ConfirmRequest | undefined;
   readonly onCancel: () => void;
   readonly onConfirm: () => void;
+  readonly children?: ReactNode;
 };
 
-export function ConfirmDialog({ request, onCancel, onConfirm }: ConfirmDialogProps) {
+export function ConfirmDialog({ request, onCancel, onConfirm, children }: ConfirmDialogProps) {
   if (request === undefined) return null;
   const toneClass = request.tone === "danger" ? "is-danger" : "is-warning";
   return (
@@ -25,6 +27,7 @@ export function ConfirmDialog({ request, onCancel, onConfirm }: ConfirmDialogPro
           <h2>{request.title}</h2>
           <p>{request.description}</p>
         </div>
+        {children}
         <div className="dialog-actions">
           <button className="ghost-action" type="button" onClick={onCancel}>
             취소

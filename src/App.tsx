@@ -1,4 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  hasRoleHistoryState,
+  isPublicVisitorRoute,
+  readRoute,
+  replaceRoute,
+  roleFromHistoryState,
+} from "./app-routing";
+import type { Route } from "./app-routing";
 import { AppRoutes } from "./components/AppRoutes";
 import { AppShell, landingByRole } from "./components/AppShell";
 import { InformationArchitecturePage } from "./components/InformationArchitecturePage";
@@ -7,6 +15,11 @@ import {
   type StudentStartChoice,
   studentStartDestinations,
 } from "./components/StudentSetupPage.model";
+import {
+  clearStoredDemoState,
+  readStoredDemoState,
+  writeStoredDemoState,
+} from "./demo-state-storage";
 import {
   addManagedUser,
   approveTeam,
@@ -28,11 +41,6 @@ import type {
   StudentApplicationInput,
 } from "./domain";
 
-type Route = {
-  readonly path: string;
-  readonly reason: string;
-};
-
 const legacyStudentConsentKey = "jnu-oss-demo-student-consent";
 const studentSetupKey = "jnu-oss-demo-student-setup";
 
@@ -44,7 +52,7 @@ export function App() {
       window.sessionStorage.getItem(studentSetupKey) === "accepted" ||
       window.sessionStorage.getItem(legacyStudentConsentKey) === "accepted",
   );
-  const [state, setState] = useState<DemoState>(() => createInitialState());
+  const [state, setState] = useState<DemoState>(() => readStoredDemoState(createInitialState()));
   const [metric, setMetric] = useState<MetricId>("activity");
   const publishedTeams = useMemo(() => publicTeams(state.teams), [state.teams]);
   const loginSummary = useMemo(
@@ -89,6 +97,10 @@ export function App() {
     }
   }, [hasCompletedStudentSetup, role, route.path]);
 
+  useEffect(() => {
+    writeStoredDemoState(state);
+  }, [state]);
+
   function navigate(path: string, nextRole?: RoleId | null): void {
     const historicRole = nextRole === undefined ? role : (nextRole ?? undefined);
     window.history.pushState({ role: historicRole ?? null }, "", path);
@@ -108,6 +120,7 @@ export function App() {
 
   function handleReset(): void {
     setState(createInitialState());
+    clearStoredDemoState();
     setRole(undefined);
     setHasCompletedStudentSetup(false);
     window.sessionStorage.removeItem(studentSetupKey);
@@ -219,44 +232,4 @@ export function App() {
       />
     </AppShell>
   );
-}
-
-function readRoute(): Route {
-  const params = new URLSearchParams(window.location.search);
-  return {
-    path: window.location.pathname === "/" ? "/login" : window.location.pathname,
-    reason: reasonText(params.get("reason")),
-  };
-}
-
-function replaceRoute(path: string, role?: RoleId): void {
-  window.history.replaceState(role === undefined ? null : { role }, "", path);
-}
-
-function isPublicVisitorRoute(path: string): boolean {
-  return (
-    path === "/public/dashboard" ||
-    path === "/competitions" ||
-    (path.startsWith("/competitions/") && !path.endsWith("/apply"))
-  );
-}
-
-function reasonText(reason: string | null): string {
-  if (reason === "student-required") {
-    return "신청서는 학생 역할에서만 접근할 수 있습니다.";
-  }
-  return "";
-}
-
-function roleFromHistoryState(state: unknown): RoleId | undefined {
-  if (typeof state !== "object" || state === null || !("role" in state)) return undefined;
-  return isRoleId(state.role) ? state.role : undefined;
-}
-
-function hasRoleHistoryState(state: unknown): boolean {
-  return typeof state === "object" && state !== null && "role" in state;
-}
-
-function isRoleId(value: unknown): value is RoleId {
-  return value === "public" || value === "student" || value === "staff" || value === "admin";
 }

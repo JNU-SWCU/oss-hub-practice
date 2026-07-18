@@ -33,16 +33,33 @@ describe("demo state transitions", () => {
       competitionId: "call-1",
       teamName: "테스트 비전 팀",
       githubIds: ["jnu-alpha", "jnu-beta"],
+      teamMode: "create",
     });
 
     expect(next.teams[0]?.name).toBe("테스트 비전 팀");
     expect(next.teams[0]?.status).toBe("submitted");
-    expect(next.teams[0]?.repo).toBe("github.com/jnu-sojoong/call-1-team-13");
+    expect(next.teams[0]?.repo).toBe("github.com/JNU-SWCU/call-1-team-13");
     expect(next.repositories[0]?.teamId).toBe(next.teams[0]?.id);
     expect(next.repositories[0]?.name).toBe("call-1-team-13");
     expect(next.activity[0]?.teamId).toBe(next.teams[0]?.id);
     expect(next.calls[0]?.teamCount).toBe((state.calls[0]?.teamCount ?? 0) + 1);
     expect(submissionsForTeam(next, next.teams[0]?.id ?? "")[0]?.status).toBe("submitted");
+  });
+
+  it("records join-code applications in team data and audit trail", () => {
+    const state = createInitialState();
+
+    const next = submitStudentApplication(state, {
+      competitionId: "call-1",
+      teamName: "참여코드 합류 팀",
+      githubIds: ["jnu-alpha", "jnu-beta"],
+      teamMode: "join",
+      joinCode: "OSS-2026",
+    });
+
+    expect(next.teams[0]?.joinCode).toBe("OSS-2026");
+    expect(next.audit[0]?.action).toBe("joined with code");
+    expect(next.audit[0]?.target).toContain("OSS-2026");
   });
 
   it("keeps only published teams in public projection", () => {
@@ -64,8 +81,15 @@ describe("demo state transitions", () => {
       title: "OSS 실전 배포 챌린지",
       host: "전남대학교 소프트웨어중심대학사업단",
       category: ["배포", "GitHub", "Vercel"],
+      period: "2026-09-01 - 2026-09-20",
       deadline: "2026-09-20",
+      teamSize: "2-4명",
       outputType: "Vercel 배포 URL",
+      applicationFields: ["참여 동기", "공개 동의", "팀 소개"],
+      milestoneName: "최종 산출물 제출",
+      milestoneDueDate: "2026-09-18",
+      deliverableType: "repo-tag",
+      reminderPolicy: "마감 3일 전 미제출 팀 요약 이메일",
     });
 
     expect(next.calls).toHaveLength(state.calls.length + 1);
@@ -73,6 +97,9 @@ describe("demo state transitions", () => {
     expect(next.calls[0]?.status).toBe("upcoming");
     expect(next.calls[0]?.visibility).toBe("internal");
     expect(milestonesForCompetition(next, next.calls[0]?.id ?? "")[0]?.name).toBe("신청서/팀 확정");
+    expect(milestonesForCompetition(next, next.calls[0]?.id ?? "")[1]?.name).toBe(
+      "최종 산출물 제출",
+    );
     expect(next.audit[0]?.action).toBe("created program draft");
   });
 

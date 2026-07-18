@@ -98,6 +98,10 @@ export function LoginPage({ notice, summary, onLogin, onReset, onNavigate }: Log
             <p className="auth-description">
               본인 역할을 선택하면 필요한 화면으로 바로 이동합니다.
             </p>
+            <p className="demo-auth-note">
+              시연 모드에서는 GitHub OAuth와 조직 권한 검사를 연결하지 않고 역할별 화면을 직접
+              엽니다.
+            </p>
 
             <section className="service-intro" aria-label="서비스 소개">
               <strong>OSS 프로그램 운영 플랫폼</strong>

@@ -20,6 +20,7 @@ export function submitStudentApplication(
 
   const cleanName = input.teamName.trim() || "새 OSS 팀";
   const members = input.githubIds.filter((githubId) => githubId.trim().length > 0);
+  const joinCode = input.teamMode === "join" ? input.joinCode?.trim() : undefined;
   const newTeamId = `team-${state.teams.length + 1}`;
   const repositorySlug = `${competition.id}-${newTeamId}`;
   const newTeam: Team = {
@@ -27,7 +28,7 @@ export function submitStudentApplication(
     name: cleanName,
     competitionId: competition.id,
     contest: competition.title,
-    repo: `github.com/jnu-sojoong/${repositorySlug}`,
+    repo: `github.com/JNU-SWCU/${repositorySlug}`,
     members,
     status: "submitted",
     commits: 0,
@@ -37,13 +38,14 @@ export function submitStudentApplication(
     lastActive: "2026-08-20",
     reportState: "draft",
     consentState: "missing",
+    joinCode: joinCode && joinCode.length > 0 ? joinCode : undefined,
   };
   const newRepo: Repository = {
     id: `repo-${state.repositories.length + 1}-main`,
     teamId: newTeam.id,
     competitionId: competition.id,
     name: repositorySlug,
-    url: `github.com/jnu-sojoong/${repositorySlug}`,
+    url: `github.com/JNU-SWCU/${repositorySlug}`,
     visibility: "private",
     license: "MIT",
     language: "TypeScript",
@@ -71,7 +73,14 @@ export function submitStudentApplication(
     calls: state.calls.map((call) =>
       call.id === competition.id ? { ...call, teamCount: call.teamCount + 1 } : call,
     ),
-    audit: [createAudit("student", "submitted application", cleanName), ...state.audit],
+    audit: [
+      createAudit(
+        "student",
+        input.teamMode === "join" ? "joined with code" : "submitted application",
+        joinCode && joinCode.length > 0 ? `${cleanName} (${joinCode})` : cleanName,
+      ),
+      ...state.audit,
+    ],
   };
 }
 
@@ -86,16 +95,16 @@ export function createProgramDraft(state: DemoState, input: ProgramDraftInput): 
     summary: `${cleanTitle} 참여 팀을 모집하고 GitHub 저장소, 규칙, 제출 현황을 한 화면에서 관리합니다.`,
     host: input.host.trim() || "전남대학교 소프트웨어중심대학사업단",
     category: categories.length > 0 ? categories : ["OSS"],
-    period: `2026-07-14 - ${input.deadline}`,
+    period: input.period.trim() || `2026-07-14 - ${input.deadline}`,
     deadline: input.deadline,
-    teamSize: "2-4명",
+    teamSize: input.teamSize.trim() || "2-4명",
     eligibility: "전남대학교 재학생",
     outputType: input.outputType.trim() || "공개 저장소",
-    reviewBasis: "신청서, GitHub ID, README, 라이선스, 활동 로그",
+    reviewBasis: `신청서, GitHub ID, ${input.applicationFields.join(", ")}, README, 라이선스, 활동 로그`,
     visibility: "internal",
     status: "upcoming",
     teamCount: 0,
-    materials: ["참가 안내", "규칙/평가표", "저장소 템플릿"],
+    materials: ["참가 안내", "규칙/평가표", "저장소 템플릿", input.reminderPolicy],
   } satisfies DemoState["calls"][number];
   const intakeMilestone: ProgramMilestone = {
     id: `${newCall.id}-intake`,
@@ -106,12 +115,33 @@ export function createProgramDraft(state: DemoState, input: ProgramDraftInput): 
     guide: "팀 이름, 팀원 GitHub ID, 동의 상태를 확정합니다.",
     gate: "intake",
   };
+  const outputMilestone: ProgramMilestone = {
+    id: `${newCall.id}-output`,
+    competitionId: newCall.id,
+    name: input.milestoneName.trim() || "최종 산출물",
+    dueDate: input.milestoneDueDate.trim() || input.deadline,
+    deliverableType: deliverableTypeFromDraft(input.deliverableType),
+    guide: `${input.outputType.trim() || "공개 저장소"} 제출 후 교직원 검토를 받습니다.`,
+    gate: "full-loop",
+  };
   return {
     ...state,
     calls: [newCall, ...state.calls],
-    milestones: [intakeMilestone, ...state.milestones],
+    milestones: [intakeMilestone, outputMilestone, ...state.milestones],
     audit: [createAudit("staff", "created program draft", cleanTitle), ...state.audit],
   };
+}
+
+function deliverableTypeFromDraft(value: string): ProgramMilestone["deliverableType"] {
+  switch (value) {
+    case "file":
+    case "text":
+    case "repo-tag":
+    case "release":
+      return value;
+    default:
+      return "repo-tag";
+  }
 }
 
 export function approveTeam(state: DemoState, teamId: string): DemoState {

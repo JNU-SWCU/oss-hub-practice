@@ -152,7 +152,7 @@ function teamStatus(value: string): TeamStatus {
 function createTeam(input: SeedTeamInput): Team {
   return {
     ...input,
-    repo: `github.com/jnu-sojoong/${slugify(input.name)}`,
+    repo: `github.com/JNU-SWCU/${slugify(input.name)}`,
     lastActive: "2026-07-02",
     reportState: input.status === "published" ? "submitted" : "draft",
     consentState: input.status === "submitted" ? "missing" : "uploaded",
@@ -223,7 +223,7 @@ function repo(
     teamId: team.id,
     competitionId: team.competitionId,
     name,
-    url: `github.com/jnu-sojoong/${name}`,
+    url: `github.com/JNU-SWCU/${name}`,
     visibility,
     license: index % 2 === 0 ? "MIT" : "Apache-2.0",
     language: index % 3 === 0 ? "TypeScript" : "Python",

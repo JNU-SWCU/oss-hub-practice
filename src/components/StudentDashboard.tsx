@@ -64,7 +64,7 @@ export function StudentDashboard({ state, onNavigate }: StudentDashboardProps) {
           <span>연결 저장소</span>
           <strong>{repositoryCount}개</strong>
           <p className="repository-address">
-            <RepositoryAddress value={primaryTeam?.repo ?? "github.com/jnu-sojoong/new-team"} />
+            <RepositoryAddress value={primaryTeam?.repo ?? "github.com/JNU-SWCU/new-team"} />
           </p>
         </article>
         <article className={correctionCount > 0 ? "status-card warning" : "status-card"}>

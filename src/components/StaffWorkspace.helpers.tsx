@@ -4,9 +4,16 @@ import type { ConfirmRequest } from "./CompliancePrimitives";
 
 export const initialProgramDraft = {
   title: "OSS 실전 배포 챌린지",
+  period: "2026-09-01 - 2026-09-20",
   deadline: "2026-09-20",
+  teamSize: "2-4명",
   categoryText: "배포, GitHub, Vercel",
   outputType: "Vercel 배포 URL",
+  applicationFields: "참여 동기, 공개 동의, 팀 소개",
+  milestoneName: "최종 산출물 제출",
+  milestoneDueDate: "2026-09-18",
+  deliverableType: "repo-tag",
+  reminderPolicy: "마감 3일 전 미제출 팀 요약 이메일",
 } as const;
 
 export type PendingStaffAction =
