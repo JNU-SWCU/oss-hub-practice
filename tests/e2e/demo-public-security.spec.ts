@@ -7,11 +7,18 @@ test("destructive staff and admin actions require confirmation", async ({ page }
   const reviewRow = page
     .getByRole("table", { name: "교직원 신청 검토 큐" })
     .getByRole("row")
-    .filter({ hasText: "AI README 평가단" });
+    .filter({ hasText: "광주 데이터 크루" });
   await reviewRow.getByRole("button", { name: "자산 공개" }).click();
-  await expect(page.getByRole("dialog", { name: "AI README 평가단 공개 전환" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "광주 데이터 크루 공개 전환" })).toBeVisible();
   await page.getByRole("button", { name: "취소" }).click();
-  await expect(page.getByRole("dialog", { name: "AI README 평가단 공개 전환" })).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "광주 데이터 크루 공개 전환" })).toHaveCount(0);
+
+  const blockedRow = page
+    .getByRole("table", { name: "교직원 신청 검토 큐" })
+    .getByRole("row")
+    .filter({ hasText: "AI README 평가단" });
+  await expect(blockedRow.getByRole("button", { name: "자산 공개" })).toBeDisabled();
+  await expect(blockedRow.getByText("공개 대기:")).toBeVisible();
 
   await page.getByRole("button", { name: "역할 바꾸기" }).click();
   await page.getByRole("button", { name: /^관리자/ }).click();

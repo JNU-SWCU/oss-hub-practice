@@ -1,4 +1,5 @@
 import { Check, RotateCcw, Search } from "lucide-react";
+import { teamPublishReadiness } from "../domain";
 import type { DemoState, Team } from "../domain";
 import { DataStatePanel } from "./CompliancePrimitives";
 import {
@@ -9,6 +10,7 @@ import {
 } from "./StaffWorkspace.helpers";
 
 type StaffReviewQueueProps = {
+  readonly state: DemoState;
   readonly teams: readonly Team[];
   readonly reviewQuery: string;
   readonly onReviewQueryChange: (value: string) => void;
@@ -16,6 +18,7 @@ type StaffReviewQueueProps = {
 };
 
 export function StaffReviewQueue({
+  state,
   teams,
   reviewQuery,
   onReviewQueryChange,
@@ -45,6 +48,7 @@ export function StaffReviewQueue({
       </div>
       {filteredReviewTargets.length > 0 ? (
         <ReviewQueueTable
+          state={state}
           teams={filteredReviewTargets}
           onPendingActionChange={onPendingActionChange}
         />
@@ -62,11 +66,12 @@ export function StaffReviewQueue({
 }
 
 type ReviewQueueTableProps = {
+  readonly state: DemoState;
   readonly teams: readonly Team[];
   readonly onPendingActionChange: (action: PendingStaffAction) => void;
 };
 
-function ReviewQueueTable({ teams, onPendingActionChange }: ReviewQueueTableProps) {
+function ReviewQueueTable({ state, teams, onPendingActionChange }: ReviewQueueTableProps) {
   return (
     <div className="table-scroll">
       <table aria-label="교직원 신청 검토 큐">
@@ -81,37 +86,60 @@ function ReviewQueueTable({ teams, onPendingActionChange }: ReviewQueueTableProp
           </tr>
         </thead>
         <tbody>
-          {teams.map((team) => (
-            <tr key={team.id}>
-              <td data-label="팀">{team.name}</td>
-              <td data-label="대회">{team.contest}</td>
-              <td data-label="보고서">{reportStateLabel(team.reportState)}</td>
-              <td data-label="제출 동의서">{consentStateLabel(team.consentState)}</td>
-              <td data-label="상태">{statusLabel(team.status)}</td>
-              <td className="action-cell" data-label="작업">
-                <button
-                  type="button"
-                  onClick={() => onPendingActionChange({ kind: "approve", teamId: team.id })}
-                >
-                  <Check size={15} />
-                  승인
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onPendingActionChange({ kind: "correction", teamId: team.id })}
-                >
-                  <RotateCcw size={15} />
-                  보완 요청
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onPendingActionChange({ kind: "publish", teamId: team.id })}
-                >
-                  자산 공개
-                </button>
-              </td>
-            </tr>
-          ))}
+          {teams.map((team) => {
+            const readiness = teamPublishReadiness(state, team.id);
+            const readinessId = `${team.id}-publish-readiness`;
+            const reasonText = readiness.canPublish
+              ? "공개 조건 충족"
+              : `공개 대기: ${readiness.reasons.join(", ")}`;
+
+            return (
+              <tr key={team.id}>
+                <td data-label="팀">{team.name}</td>
+                <td data-label="대회">{team.contest}</td>
+                <td data-label="보고서">{reportStateLabel(team.reportState)}</td>
+                <td data-label="제출 동의서">{consentStateLabel(team.consentState)}</td>
+                <td data-label="상태">{statusLabel(team.status)}</td>
+                <td className="action-cell" data-label="작업">
+                  <button
+                    type="button"
+                    onClick={() => onPendingActionChange({ kind: "approve", teamId: team.id })}
+                  >
+                    <Check size={15} />
+                    승인
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onPendingActionChange({ kind: "correction", teamId: team.id })}
+                  >
+                    <RotateCcw size={15} />
+                    보완 요청
+                  </button>
+                  <button
+                    aria-describedby={readinessId}
+                    disabled={!readiness.canPublish}
+                    title={reasonText}
+                    type="button"
+                    onClick={() => onPendingActionChange({ kind: "publish", teamId: team.id })}
+                  >
+                    자산 공개
+                  </button>
+                  <small className="publish-readiness" id={readinessId}>
+                    {readiness.canPublish ? (
+                      reasonText
+                    ) : (
+                      <>
+                        <span>공개 대기:</span>
+                        {readiness.reasons.map((reason) => (
+                          <span key={reason}> {reason}</span>
+                        ))}
+                      </>
+                    )}
+                  </small>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

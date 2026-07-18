@@ -199,6 +199,7 @@ export function StaffWorkspace({
       />
       <StaffMilestoneOps state={state} selectedProgramId={selectedProgramId} />
       <StaffReviewQueue
+        state={state}
         teams={reviewTargets}
         reviewQuery={reviewQuery}
         onReviewQueryChange={setReviewQuery}

@@ -128,7 +128,15 @@ test("login-first student application appears in staff review and becomes provis
   await expect(page.getByRole("textbox", { name: /참여코드/ })).toBeVisible();
   await expect(page.getByText("팀 인원 기준")).toBeVisible();
   await page.getByLabel("팀 이름").fill("테스트 비전 팀");
+  await page.getByRole("radio", { name: "참여코드로 합류" }).check();
+  await page.getByRole("textbox", { name: /참여코드/ }).fill("OSS-RELOAD-26");
   await page.getByLabel("팀원 GitHub ID").fill("jnu-alpha, jnu-beta");
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.reload();
+  await expect(page.getByLabel("팀 이름")).toHaveValue("테스트 비전 팀");
+  await expect(page.getByRole("radio", { name: "참여코드로 합류" })).toBeChecked();
+  await expect(page.getByRole("textbox", { name: /참여코드/ })).toHaveValue("OSS-RELOAD-26");
+  await expect(page.getByLabel("팀원 GitHub ID")).toHaveValue("jnu-alpha, jnu-beta");
   await page.getByRole("button", { name: "프로젝트 공간 만들기" }).click();
   await expect(page.getByRole("navigation", { name: "학생 시작 흐름" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "내 활동과 저장소 현황" })).toBeVisible();

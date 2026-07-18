@@ -154,7 +154,8 @@ function createTeam(input: SeedTeamInput): Team {
     ...input,
     repo: `github.com/JNU-SWCU/${slugify(input.name)}`,
     lastActive: "2026-07-02",
-    reportState: input.status === "published" ? "submitted" : "draft",
+    reportState:
+      input.status === "published" || input.status === "provisioned" ? "submitted" : "draft",
     consentState: input.status === "submitted" ? "missing" : "uploaded",
   };
 }

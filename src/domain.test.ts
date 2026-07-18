@@ -10,6 +10,7 @@ import {
   publishTeamAsset,
   submissionsForTeam,
   submitStudentApplication,
+  teamPublishReadiness,
 } from "./domain";
 
 describe("demo state transitions", () => {
@@ -130,5 +131,25 @@ describe("demo state transitions", () => {
     expect(
       publicRepositories(published.repositories, published.teams).map((repo) => repo.teamId),
     ).toContain("team-2");
+  });
+
+  it("blocks public transition until consent, report, repo, and milestones are complete", () => {
+    const state = createInitialState();
+    const blocked = publishTeamAsset(state, "team-5");
+    const readiness = teamPublishReadiness(state, "team-5");
+
+    expect(readiness.canPublish).toBe(false);
+    expect(readiness.reasons).toEqual(
+      expect.arrayContaining([
+        "승인/저장소 배정 필요",
+        "공개 동의서 업로드 필요",
+        "최종 보고서 제출 필요",
+        "필수 마일스톤 제출 완료 필요",
+      ]),
+    );
+    expect(blocked.teams.find((team) => team.id === "team-5")?.status).toBe("submitted");
+    expect(blocked.repositories.filter((repo) => repo.teamId === "team-5")).toEqual(
+      state.repositories.filter((repo) => repo.teamId === "team-5"),
+    );
   });
 });

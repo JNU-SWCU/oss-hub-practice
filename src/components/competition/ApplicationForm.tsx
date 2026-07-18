@@ -8,9 +8,19 @@ import {
   Send,
   UserPlus,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Call, StudentApplicationInput } from "../../domain";
 import { useUnsavedChangesWarning } from "../CompliancePrimitives";
+import {
+  clearApplicationDraft,
+  includeApplicantGithub,
+  initialApplicationDraft,
+  loadApplicationDraft,
+  parseGithubIds,
+  parseTeamSizeRange,
+  saveApplicationDraft,
+} from "./ApplicationForm.helpers";
+import type { TeamMode } from "./ApplicationForm.helpers";
 import type { Navigate } from "./shared";
 
 type ApplicationFormProps = {
@@ -19,30 +29,26 @@ type ApplicationFormProps = {
   readonly onNavigate: Navigate;
 };
 
-const currentApplicantGithub = "jnu-oss-1";
-const initialApplicationDraft = {
-  teamName: "해커톤 새싹 팀",
-  githubIds: "jnu-alpha, jnu-beta",
-  summary: "전남대학교 학생들이 교과/비교과 활동에서 만든 OSS 산출물을 저장소로 공개합니다.",
-} as const;
-
-type TeamMode = "create" | "join";
-
 export function ApplicationForm({ competition, onApply, onNavigate }: ApplicationFormProps) {
-  const [teamName, setTeamName] = useState<string>(initialApplicationDraft.teamName);
-  const [githubIds, setGithubIds] = useState<string>(initialApplicationDraft.githubIds);
-  const [summary, setSummary] = useState<string>(initialApplicationDraft.summary);
-  const [teamMode, setTeamMode] = useState<TeamMode>("create");
-  const [joinCode, setJoinCode] = useState<string>("OSS-2026");
+  const [savedDraft] = useState(() => loadApplicationDraft(competition.id));
+  const [teamName, setTeamName] = useState<string>(savedDraft.teamName);
+  const [githubIds, setGithubIds] = useState<string>(savedDraft.githubIds);
+  const [summary, setSummary] = useState<string>(savedDraft.summary);
+  const [teamMode, setTeamMode] = useState<TeamMode>(savedDraft.teamMode);
+  const [joinCode, setJoinCode] = useState<string>(savedDraft.joinCode);
   const [error, setError] = useState("");
   const previewIds = includeApplicantGithub(parseGithubIds(githubIds));
   const hasUnsavedApplicationDraft =
     teamName !== initialApplicationDraft.teamName ||
     githubIds !== initialApplicationDraft.githubIds ||
     summary !== initialApplicationDraft.summary ||
-    teamMode !== "create" ||
-    joinCode !== "OSS-2026";
+    teamMode !== initialApplicationDraft.teamMode ||
+    joinCode !== initialApplicationDraft.joinCode;
   useUnsavedChangesWarning(hasUnsavedApplicationDraft);
+
+  useEffect(() => {
+    saveApplicationDraft(competition.id, { teamName, githubIds, summary, teamMode, joinCode });
+  }, [competition.id, githubIds, joinCode, summary, teamMode, teamName]);
 
   function handleSubmit(): void {
     const teammateIds = parseGithubIds(githubIds);
@@ -86,6 +92,7 @@ export function ApplicationForm({ competition, onApply, onNavigate }: Applicatio
       setError("현재 접수 가능한 프로그램이 아닙니다.");
       return;
     }
+    clearApplicationDraft(competition.id);
     onNavigate("/student/dashboard");
   }
 
@@ -228,27 +235,4 @@ function Info({ label, value }: { readonly label: string; readonly value: string
       <strong>{value}</strong>
     </div>
   );
-}
-
-function parseGithubIds(value: string): readonly string[] {
-  return value
-    .split(",")
-    .map((githubId) => githubId.trim())
-    .filter(Boolean);
-}
-
-function includeApplicantGithub(githubIds: readonly string[]): readonly string[] {
-  if (githubIds.includes(currentApplicantGithub)) return githubIds;
-  return [currentApplicantGithub, ...githubIds];
-}
-
-function parseTeamSizeRange(
-  value: string,
-): { readonly min: number; readonly max: number } | undefined {
-  const match = /(\d+)\D+(\d+)/.exec(value);
-  if (match === null) return undefined;
-  const min = Number(match[1]);
-  const max = Number(match[2]);
-  if (!Number.isInteger(min) || !Number.isInteger(max) || min > max) return undefined;
-  return { min, max };
 }

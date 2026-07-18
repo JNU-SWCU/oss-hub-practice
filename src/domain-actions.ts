@@ -1,3 +1,4 @@
+import { teamPublishReadiness } from "./domain-publish-readiness";
 import type {
   ActivityEvent,
   DemoState,
@@ -166,6 +167,9 @@ export function requestTeamCorrection(state: DemoState, teamId: string, reason: 
 
 export function publishTeamAsset(state: DemoState, teamId: string): DemoState {
   const target = state.teams.find((team) => team.id === teamId);
+  const readiness = teamPublishReadiness(state, teamId);
+  if (target === undefined || !readiness.canPublish) return state;
+
   const nextState = updateTeam(
     state,
     teamId,
