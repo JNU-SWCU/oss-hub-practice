@@ -1095,8 +1095,12 @@ textarea {
 
 .select-field {
   grid-auto-flow: column;
-  grid-template-columns: auto auto 150px;
+  grid-template-columns: auto max-content minmax(150px, 1fr);
   align-items: center;
+}
+
+.select-field span {
+  white-space: nowrap;
 }
 
 .file-row {
