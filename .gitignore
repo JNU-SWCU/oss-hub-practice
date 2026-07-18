@@ -3,6 +3,8 @@ node_modules/
 .next/
 out/
 coverage/
+artifacts/
+artifacts-*.png
 playwright-report/
 test-results/
 .omo/

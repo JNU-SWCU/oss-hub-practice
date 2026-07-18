@@ -14,10 +14,10 @@ import {
   CompetitionList,
   PublicDashboard,
 } from "./CompetitionPages";
-import { ConsentPage } from "./ConsentPage";
 import { StaffWorkspace } from "./StaffWorkspace";
 import { StudentDashboard } from "./StudentDashboard";
-import { StudentJourney } from "./StudentJourney";
+import { StudentSetupPage } from "./StudentSetupPage";
+import type { StudentStartChoice } from "./StudentSetupPage.model";
 
 type AppRoutesProps = {
   readonly route: string;
@@ -25,12 +25,11 @@ type AppRoutesProps = {
   readonly state: DemoState;
   readonly metric: MetricId;
   readonly publishedTeams: readonly DemoState["teams"][number][];
-  readonly hasConsented: boolean;
-  readonly hasApplied: boolean;
+  readonly hasCompletedStudentSetup: boolean;
   readonly onMetricChange: (metric: MetricId) => void;
   readonly onNavigate: (path: string) => void;
   readonly onStudentApply: (input: StudentApplicationInput) => boolean;
-  readonly onConsent: () => void;
+  readonly onStudentSetupComplete: (choice: StudentStartChoice) => void;
   readonly onApproveTeam: (teamId: string) => void;
   readonly onRequestCorrection: (teamId: string, reason: string) => void;
   readonly onPublishTeam: (teamId: string) => void;
@@ -50,18 +49,15 @@ export function AppRoutes(input: AppRoutesProps) {
   const visibleCompetition =
     input.role === "public" && competition?.visibility !== "public" ? undefined : competition;
 
-  if (input.role === "student" && !input.hasConsented) {
-    return <ConsentPage onConsent={input.onConsent} />;
+  if (input.route === "/student/setup") {
+    if (input.role !== "student") {
+      return <RoleRequiredNotice roleLabel="학생" onNavigate={input.onNavigate} />;
+    }
+    return <StudentSetupPage onComplete={input.onStudentSetupComplete} />;
   }
 
-  if (input.role === "student" && input.route === "/consent") {
-    return (
-      <StudentDashboard
-        state={input.state}
-        hasApplied={input.hasApplied}
-        onNavigate={input.onNavigate}
-      />
-    );
+  if (input.role === "student" && !input.hasCompletedStudentSetup) {
+    return <StudentSetupPage onComplete={input.onStudentSetupComplete} />;
   }
 
   if (input.route === "/public/dashboard") {
@@ -86,13 +82,7 @@ export function AppRoutes(input: AppRoutesProps) {
     if (input.role !== "student") {
       return <RoleRequiredNotice roleLabel="학생" onNavigate={input.onNavigate} />;
     }
-    return (
-      <StudentDashboard
-        state={input.state}
-        hasApplied={input.hasApplied}
-        onNavigate={input.onNavigate}
-      />
-    );
+    return <StudentDashboard state={input.state} onNavigate={input.onNavigate} />;
   }
 
   if (input.route === "/staff/operations") {
@@ -135,7 +125,6 @@ export function AppRoutes(input: AppRoutesProps) {
     if (visibleCompetition.status !== "open") {
       return (
         <main className="page-shell student-flow-page">
-          <StudentJourney current="program" />
           <section className="not-found-panel">
             <h1>신청할 수 없는 프로그램입니다</h1>
             <p>접수 중인 프로그램을 선택해 신청서를 작성해 주세요.</p>

@@ -4,6 +4,10 @@ import { AppShell, landingByRole } from "./components/AppShell";
 import { InformationArchitecturePage } from "./components/InformationArchitecturePage";
 import { LoginPage } from "./components/LoginPage";
 import {
+  type StudentStartChoice,
+  studentStartDestinations,
+} from "./components/StudentSetupPage.model";
+import {
   addManagedUser,
   approveTeam,
   createInitialState,
@@ -29,15 +33,17 @@ type Route = {
   readonly reason: string;
 };
 
-const studentConsentKey = "jnu-oss-demo-student-consent";
+const legacyStudentConsentKey = "jnu-oss-demo-student-consent";
+const studentSetupKey = "jnu-oss-demo-student-setup";
 
 export function App() {
   const [route, setRoute] = useState<Route>(() => readRoute());
   const [role, setRole] = useState<RoleId | undefined>(() => roleFromHistoryState(history.state));
-  const [hasConsented, setHasConsented] = useState(
-    () => window.sessionStorage.getItem(studentConsentKey) === "accepted",
+  const [hasCompletedStudentSetup, setHasCompletedStudentSetup] = useState(
+    () =>
+      window.sessionStorage.getItem(studentSetupKey) === "accepted" ||
+      window.sessionStorage.getItem(legacyStudentConsentKey) === "accepted",
   );
-  const [hasApplied, setHasApplied] = useState(false);
   const [state, setState] = useState<DemoState>(() => createInitialState());
   const [metric, setMetric] = useState<MetricId>("activity");
   const publishedTeams = useMemo(() => publicTeams(state.teams), [state.teams]);
@@ -73,14 +79,15 @@ export function App() {
 
   useEffect(() => {
     if (role !== "student" || route.path === "/login") return;
-    const requiredRoute = hasConsented ? "/student/dashboard" : "/consent";
-    const needsConsent = !hasConsented && route.path !== "/consent";
-    const revisitsCompletedConsent = hasConsented && route.path === "/consent";
-    if (needsConsent || revisitsCompletedConsent) {
+    const requiredRoute = hasCompletedStudentSetup ? "/student/dashboard" : "/student/setup";
+    const needsSetup = !hasCompletedStudentSetup && route.path !== "/student/setup";
+    const revisitsCompletedSetup =
+      hasCompletedStudentSetup && (route.path === "/student/setup" || route.path === "/consent");
+    if (needsSetup || revisitsCompletedSetup) {
       replaceRoute(requiredRoute, role);
       setRoute(readRoute());
     }
-  }, [hasConsented, role, route.path]);
+  }, [hasCompletedStudentSetup, role, route.path]);
 
   function navigate(path: string, nextRole?: RoleId | null): void {
     const historicRole = nextRole === undefined ? role : (nextRole ?? undefined);
@@ -92,7 +99,9 @@ export function App() {
   function enterRole(nextRole: RoleId): void {
     setRole(nextRole);
     navigate(
-      nextRole === "student" && !hasConsented ? "/consent" : landingByRole[nextRole],
+      nextRole === "student" && !hasCompletedStudentSetup
+        ? "/student/setup"
+        : landingByRole[nextRole],
       nextRole,
     );
   }
@@ -100,9 +109,9 @@ export function App() {
   function handleReset(): void {
     setState(createInitialState());
     setRole(undefined);
-    setHasConsented(false);
-    window.sessionStorage.removeItem(studentConsentKey);
-    setHasApplied(false);
+    setHasCompletedStudentSetup(false);
+    window.sessionStorage.removeItem(studentSetupKey);
+    window.sessionStorage.removeItem(legacyStudentConsentKey);
     setMetric("activity");
     navigate("/login", null);
   }
@@ -111,8 +120,13 @@ export function App() {
     const nextState = submitStudentApplication(state, input);
     if (nextState === state) return false;
     setState(nextState);
-    setHasApplied(true);
     return true;
+  }
+
+  function handleStudentSetupComplete(choice: StudentStartChoice): void {
+    window.sessionStorage.setItem(studentSetupKey, "accepted");
+    setHasCompletedStudentSetup(true);
+    navigate(studentStartDestinations[choice]);
   }
 
   function handleApproveTeam(teamId: string): void {
@@ -168,7 +182,9 @@ export function App() {
     );
   }
 
-  if (role === undefined) {
+  const effectiveRole = role ?? (isPublicVisitorRoute(route.path) ? "public" : undefined);
+
+  if (effectiveRole === undefined) {
     return (
       <LoginPage
         notice="먼저 역할을 선택해야 접근할 수 있습니다."
@@ -181,23 +197,18 @@ export function App() {
   }
 
   return (
-    <AppShell role={role} onNavigate={navigate}>
+    <AppShell role={effectiveRole} onNavigate={navigate}>
       <AppRoutes
         route={route.path}
-        role={role}
+        role={effectiveRole}
         state={state}
         metric={metric}
         publishedTeams={publishedTeams}
-        hasConsented={hasConsented}
-        hasApplied={hasApplied}
+        hasCompletedStudentSetup={hasCompletedStudentSetup}
         onMetricChange={setMetric}
         onNavigate={navigate}
         onStudentApply={handleStudentApply}
-        onConsent={() => {
-          window.sessionStorage.setItem(studentConsentKey, "accepted");
-          setHasConsented(true);
-          navigate("/student/dashboard");
-        }}
+        onStudentSetupComplete={handleStudentSetupComplete}
         onApproveTeam={handleApproveTeam}
         onRequestCorrection={handleRequestCorrection}
         onPublishTeam={handlePublishTeam}
@@ -220,6 +231,14 @@ function readRoute(): Route {
 
 function replaceRoute(path: string, role?: RoleId): void {
   window.history.replaceState(role === undefined ? null : { role }, "", path);
+}
+
+function isPublicVisitorRoute(path: string): boolean {
+  return (
+    path === "/public/dashboard" ||
+    path === "/competitions" ||
+    (path.startsWith("/competitions/") && !path.endsWith("/apply"))
+  );
 }
 
 function reasonText(reason: string | null): string {

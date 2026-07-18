@@ -1,0 +1,27 @@
+# Local-only development artifacts
+artifacts/
+artifacts-*.png
+playwright-report/
+test-results/
+.omo/
+
+# Local build/cache/dependency folders
+node_modules/
+dist/
+build/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# Local Vercel and Git metadata
+.vercel/
+.git/
+
+# Local environment and logs
+.env
+.env.local
+.env.*
+!.env.example
+!.env.*.example
+*.log
+.local-preview.pid
