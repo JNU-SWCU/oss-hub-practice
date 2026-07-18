@@ -7,7 +7,8 @@ type StaffMilestoneOpsProps = {
 };
 
 export function StaffMilestoneOps({ state, selectedProgramId }: StaffMilestoneOpsProps) {
-  const selectedProgram = state.calls.find((call) => call.id === selectedProgramId) ?? state.calls[0];
+  const selectedProgram =
+    state.calls.find((call) => call.id === selectedProgramId) ?? state.calls[0];
   const selectedProgramTeams =
     selectedProgram === undefined
       ? []
@@ -30,7 +31,9 @@ export function StaffMilestoneOps({ state, selectedProgramId }: StaffMilestoneOp
               제출 운영
             </p>
             <h3>팀 x 마일스톤 매트릭스</h3>
-            <p>{selectedProgram?.title ?? "선택된 프로그램"}의 팀별 제출 상태를 한 번에 확인합니다.</p>
+            <p>
+              {selectedProgram?.title ?? "선택된 프로그램"}의 팀별 제출 상태를 한 번에 확인합니다.
+            </p>
           </div>
         </div>
         <div className="table-scroll">
@@ -55,7 +58,9 @@ export function StaffMilestoneOps({ state, selectedProgramId }: StaffMilestoneOp
                       const submission = submissionForMilestone(teamSubmissions, milestone.id);
                       return (
                         <td data-label={milestone.name} key={milestone.id}>
-                          {submission === undefined ? "대기" : milestoneStatusLabel(submission.status)}
+                          {submission === undefined
+                            ? "대기"
+                            : milestoneStatusLabel(submission.status)}
                         </td>
                       );
                     })}

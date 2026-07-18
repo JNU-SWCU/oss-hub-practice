@@ -1,24 +1,17 @@
 import { ActivitySquare, AlertTriangle, ShieldCheck, UserPlus } from "lucide-react";
 import { useState } from "react";
 import type { DemoState, ManagedUser } from "../domain";
-import {
-  ConfirmDialog,
-  ToastMessage,
-  useUnsavedChangesWarning,
-} from "./CompliancePrimitives";
 import { AdminAuditPanel } from "./AdminAuditPanel";
+import { AdminUserManagementPanel } from "./AdminUserManagementPanel";
 import {
+  MetricCard,
   type PendingUserAction,
   type UserRoleFilter,
-  MetricCard,
   assertNever,
   pendingUserActionRequest,
 } from "./AdminWorkspace.helpers";
-import { AdminUserManagementPanel } from "./AdminUserManagementPanel";
-import {
-  apiModeText,
-  parseUserRole,
-} from "./admin-workspace-labels";
+import { ConfirmDialog, ToastMessage, useUnsavedChangesWarning } from "./CompliancePrimitives";
+import { apiModeText, parseUserRole } from "./admin-workspace-labels";
 
 type AdminWorkspaceProps = {
   readonly state: DemoState;

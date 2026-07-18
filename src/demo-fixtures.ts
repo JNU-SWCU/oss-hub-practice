@@ -1,3 +1,5 @@
+import { createActivity } from "./demo-activity-fixtures";
+import { createCompetitions, createMilestones } from "./demo-program-fixtures";
 import type {
   DemoState,
   ManagedUser,
@@ -10,8 +12,6 @@ import type {
   TeamStatus,
 } from "./domain-types";
 import { createAudit, slugify } from "./domain-utils";
-import { createActivity } from "./demo-activity-fixtures";
-import { createCompetitions, createMilestones } from "./demo-program-fixtures";
 
 type SeedTeamInput = {
   readonly id: string;

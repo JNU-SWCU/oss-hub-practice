@@ -1,21 +1,13 @@
-import {
-  BarChart3,
-  ClipboardList,
-  FileCheck2,
-} from "lucide-react";
+import { BarChart3, ClipboardList, FileCheck2 } from "lucide-react";
 import { useState } from "react";
-import { type DemoState, type ProgramDraftInput } from "../domain";
-import {
-  ConfirmDialog,
-  ToastMessage,
-  useUnsavedChangesWarning,
-} from "./CompliancePrimitives";
+import type { DemoState, ProgramDraftInput } from "../domain";
+import { ConfirmDialog, ToastMessage, useUnsavedChangesWarning } from "./CompliancePrimitives";
 import { StaffMilestoneOps } from "./StaffMilestoneOps";
 import { StaffProgramOps } from "./StaffProgramOps";
 import { StaffReviewQueue } from "./StaffReviewQueue";
 import {
-  type PendingStaffAction,
   MetricCard,
+  type PendingStaffAction,
   assertNever,
   initialProgramDraft,
   pendingActionRequest,

@@ -1,11 +1,11 @@
 import { Search } from "lucide-react";
 import type { ManagedUser } from "../domain";
-import { DataStatePanel } from "./CompliancePrimitives";
 import {
   type PendingUserAction,
   type UserRoleFilter,
   parseUserRoleFilter,
 } from "./AdminWorkspace.helpers";
+import { DataStatePanel } from "./CompliancePrimitives";
 import { roleLabel, userStatusLabel } from "./admin-workspace-labels";
 
 type AdminUserManagementPanelProps = {
@@ -78,7 +78,10 @@ export function AdminUserManagementPanel({
         </div>
       </div>
       {visibleUsers.length > 0 ? (
-        <AdminUserTable users={visibleUsers} onPendingUserActionChange={onPendingUserActionChange} />
+        <AdminUserTable
+          users={visibleUsers}
+          onPendingUserActionChange={onPendingUserActionChange}
+        />
       ) : (
         <DataStatePanel
           state="empty"

@@ -31,7 +31,8 @@ export function StaffProgramOps({
   onOutputTypeChange,
   onCreateProgram,
 }: StaffProgramOpsProps) {
-  const selectedProgram = state.calls.find((call) => call.id === selectedProgramId) ?? state.calls[0];
+  const selectedProgram =
+    state.calls.find((call) => call.id === selectedProgramId) ?? state.calls[0];
   return (
     <section className="program-ops-grid span-wide" aria-label="사업단 프로그램 생성과 관리">
       <form className="form-panel" onSubmit={(event) => event.preventDefault()}>
@@ -42,7 +43,10 @@ export function StaffProgramOps({
         <h3>새 사업단 프로그램 초안</h3>
         <label>
           <span>프로그램명</span>
-          <input value={programTitle} onChange={(event) => onProgramTitleChange(event.target.value)} />
+          <input
+            value={programTitle}
+            onChange={(event) => onProgramTitleChange(event.target.value)}
+          />
         </label>
         <label>
           <span>마감일</span>
@@ -50,7 +54,10 @@ export function StaffProgramOps({
         </label>
         <label>
           <span>카테고리</span>
-          <input value={categoryText} onChange={(event) => onCategoryTextChange(event.target.value)} />
+          <input
+            value={categoryText}
+            onChange={(event) => onCategoryTextChange(event.target.value)}
+          />
           <small>쉼표로 구분합니다. 예: 배포, GitHub, Vercel</small>
         </label>
         <label>
@@ -74,7 +81,10 @@ export function StaffProgramOps({
           </div>
           <label className="select-field">
             <span>운영 대회 선택</span>
-            <select value={selectedProgram?.id ?? ""} onChange={(event) => onSelectedProgramChange(event.target.value)}>
+            <select
+              value={selectedProgram?.id ?? ""}
+              onChange={(event) => onSelectedProgramChange(event.target.value)}
+            >
               {state.calls.map((call) => (
                 <option value={call.id} key={call.id}>
                   {call.title}

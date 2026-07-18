@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import { type DemoState, type RoleId } from "../../domain";
+import type { DemoState, RoleId } from "../../domain";
 import { DataStatePanel } from "../CompliancePrimitives";
 import {
   CompetitionSectionTitle,
   CompetitionSummary,
   CompetitionToolbar,
+  type SortKey,
+  type StatusFilter,
   StudentEntryOptions,
   filterCalls,
   parseDataState,
   parseSortKey,
   parseStatusFilter,
   sortCalls,
-  type SortKey,
-  type StatusFilter,
 } from "./CompetitionList.helpers";
 import { CompetitionCard, type Navigate, PageHeader } from "./shared";
 

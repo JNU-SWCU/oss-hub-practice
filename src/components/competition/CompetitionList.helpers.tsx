@@ -1,10 +1,5 @@
 import { CalendarDays, ListFilter, Search, SlidersHorizontal } from "lucide-react";
-import {
-  type Call,
-  type CompetitionStatus,
-  type RoleId,
-  competitionStatuses,
-} from "../../domain";
+import { type Call, type CompetitionStatus, type RoleId, competitionStatuses } from "../../domain";
 import type { DataStateKind } from "../CompliancePrimitives";
 import { type Navigate, SectionTitle, statusLabel } from "./shared";
 
@@ -15,7 +10,9 @@ export const filterOptions: readonly StatusFilter[] = ["all", ...competitionStat
 
 type StudentEntryOptionsProps = {
   readonly onNavigate: Navigate;
-  readonly onQueryChange: (next: Partial<{ readonly status: StatusFilter; readonly q: string }>) => void;
+  readonly onQueryChange: (
+    next: Partial<{ readonly status: StatusFilter; readonly q: string }>,
+  ) => void;
 };
 
 export function StudentEntryOptions({ onNavigate, onQueryChange }: StudentEntryOptionsProps) {
@@ -124,7 +121,10 @@ export function CompetitionToolbar({
         <label className="select-field">
           <SlidersHorizontal size={16} />
           <span>정렬</span>
-          <select value={sort} onChange={(event) => onQueryChange({ sort: parseSortKey(event.target.value) })}>
+          <select
+            value={sort}
+            onChange={(event) => onQueryChange({ sort: parseSortKey(event.target.value) })}
+          >
             <option value="deadline">마감순</option>
             <option value="teams">신청 많은순</option>
             <option value="status">상태순</option>
@@ -153,7 +153,11 @@ export function CompetitionSectionTitle({ status, count }: CompetitionSectionTit
   );
 }
 
-export function filterCalls(calls: readonly Call[], status: StatusFilter, query: string): readonly Call[] {
+export function filterCalls(
+  calls: readonly Call[],
+  status: StatusFilter,
+  query: string,
+): readonly Call[] {
   const cleanQuery = query.trim().toLowerCase();
   return calls.filter((call) => {
     const statusMatches = status === "all" || call.status === status;
@@ -171,7 +175,8 @@ export function sortCalls(calls: readonly Call[], sort: SortKey, persona: RoleId
     if (sort === "teams") return right.teamCount - left.teamCount;
     if (sort === "status") return left.status.localeCompare(right.status, "ko-KR");
     if (persona === "student") {
-      const priorityDifference = studentStatusPriority(left.status) - studentStatusPriority(right.status);
+      const priorityDifference =
+        studentStatusPriority(left.status) - studentStatusPriority(right.status);
       if (priorityDifference !== 0) return priorityDifference;
     }
     return left.deadline.localeCompare(right.deadline, "ko-KR");

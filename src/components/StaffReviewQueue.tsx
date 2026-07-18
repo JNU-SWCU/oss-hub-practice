@@ -44,7 +44,10 @@ export function StaffReviewQueue({
         </label>
       </div>
       {filteredReviewTargets.length > 0 ? (
-        <ReviewQueueTable teams={filteredReviewTargets} onPendingActionChange={onPendingActionChange} />
+        <ReviewQueueTable
+          teams={filteredReviewTargets}
+          onPendingActionChange={onPendingActionChange}
+        />
       ) : (
         <DataStatePanel
           state="empty"
