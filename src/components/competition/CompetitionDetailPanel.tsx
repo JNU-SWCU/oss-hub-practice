@@ -1,14 +1,15 @@
-import { ClipboardList, FileText, Github, Trophy } from "lucide-react";
-import type { ReactNode } from "react";
-import type { Call, MetricId, Team } from "../../domain";
+import { ClipboardList, FileText, Github, ListChecks, Trophy } from "lucide-react";
+import type { Call, MetricId, ProgramMilestone, Team, TeamMilestoneSubmission } from "../../domain";
 import { Leaderboard } from "../Leaderboard";
+import { MilestoneTracker, PanelTitle, TeamTable } from "./CompetitionDetailPanel.sections";
 import { PublishedAssets } from "./shared";
 
-export type DetailTab = "overview" | "apply" | "repos" | "leaderboard" | "materials";
+export type DetailTab = "overview" | "apply" | "milestones" | "repos" | "leaderboard" | "materials";
 
 export const detailTabs: readonly { readonly id: DetailTab; readonly label: string }[] = [
   { id: "overview", label: "개요" },
   { id: "apply", label: "신청/팀" },
+  { id: "milestones", label: "마일스톤" },
   { id: "repos", label: "저장소" },
   { id: "leaderboard", label: "리더보드" },
   { id: "materials", label: "자료" },
@@ -25,6 +26,8 @@ type CompetitionDetailPanelProps = {
   readonly activeTab: DetailTab;
   readonly competition: Call;
   readonly competitionTeams: readonly Team[];
+  readonly milestones: readonly ProgramMilestone[];
+  readonly submissions: readonly TeamMilestoneSubmission[];
   readonly publicTeams: readonly Team[];
   readonly metric: MetricId;
   readonly onMetricChange: (metric: MetricId) => void;
@@ -35,6 +38,8 @@ export function CompetitionDetailPanel({
   activeTab,
   competition,
   competitionTeams,
+  milestones,
+  submissions,
   publicTeams,
   metric,
   onMetricChange,
@@ -61,6 +66,18 @@ export function CompetitionDetailPanel({
         />
         <PublishedAssets teams={publicTeams} />
         <TeamTable teams={visibleTeams} audience={audience} />
+      </section>
+    );
+  }
+  if (activeTab === "milestones") {
+    return (
+      <section className="table-panel">
+        <PanelTitle
+          icon={<ListChecks size={18} />}
+          title="마일스톤 제출 흐름"
+          description="학생은 마감별 제출 상태를 확인하고, 교직원은 같은 데이터를 검토 매트릭스로 봅니다."
+        />
+        <MilestoneTracker milestones={milestones} teams={visibleTeams} submissions={submissions} />
       </section>
     );
   }
@@ -126,100 +143,4 @@ export function CompetitionDetailPanel({
       )}
     </section>
   );
-}
-
-function PanelTitle({
-  icon,
-  title,
-  description,
-}: {
-  readonly icon: ReactNode;
-  readonly title: string;
-  readonly description: string;
-}) {
-  return (
-    <div className="panel-heading">
-      <div>
-        <p className="section-kicker">{icon} 대회 상세</p>
-        <h2>{title}</h2>
-        <p>{description}</p>
-      </div>
-    </div>
-  );
-}
-
-function TeamTable({
-  teams,
-  audience,
-}: {
-  readonly teams: readonly Team[];
-  readonly audience: "public" | "internal";
-}) {
-  if (teams.length === 0) return <p className="empty-state">아직 연결된 팀이 없습니다.</p>;
-  if (audience === "public") {
-    return (
-      <div className="table-scroll">
-        <table aria-label="공개 대회 저장소">
-          <thead>
-            <tr>
-              <th>팀</th>
-              <th>저장소</th>
-              <th>커밋</th>
-              <th>PR</th>
-              <th>스타</th>
-              <th>최근 활동</th>
-            </tr>
-          </thead>
-          <tbody>
-            {teams.map((team) => (
-              <tr key={team.id}>
-                <td data-label="팀">{team.name}</td>
-                <td data-label="저장소">{team.repo}</td>
-                <td data-label="커밋">{team.commits}</td>
-                <td data-label="PR">{team.prs}</td>
-                <td data-label="스타">{team.stars}</td>
-                <td data-label="최근 활동">{team.lastActive}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-  return (
-    <div className="table-scroll">
-      <table aria-label="대회 팀과 저장소">
-        <thead>
-          <tr>
-            <th>팀</th>
-            <th>GitHub ID</th>
-            <th>상태</th>
-            <th>저장소</th>
-            <th>최근 활동</th>
-          </tr>
-        </thead>
-        <tbody>
-          {teams.map((team) => (
-            <tr key={team.id}>
-              <td data-label="팀">{team.name}</td>
-              <td data-label="GitHub ID">{team.members.join(", ")}</td>
-              <td data-label="상태">{teamStatusLabel(team.status)}</td>
-              <td data-label="저장소">{team.repo}</td>
-              <td data-label="최근 활동">{team.lastActive}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function teamStatusLabel(status: Team["status"]): string {
-  const labels: Record<Team["status"], string> = {
-    submitted: "접수 완료",
-    correction: "보완 요청",
-    provisioned: "저장소 배정 완료",
-    published: "공개 자산",
-  };
-  return labels[status];
 }

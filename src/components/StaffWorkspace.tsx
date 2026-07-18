@@ -1,12 +1,24 @@
-import { BarChart3, Check, ClipboardList, FileCheck2, RotateCcw } from "lucide-react";
-import type { ReactNode } from "react";
-import type { DemoState } from "../domain";
+import { BarChart3, ClipboardList, FileCheck2 } from "lucide-react";
+import { useState } from "react";
+import type { DemoState, ProgramDraftInput } from "../domain";
+import { ConfirmDialog, ToastMessage, useUnsavedChangesWarning } from "./CompliancePrimitives";
+import { StaffMilestoneOps } from "./StaffMilestoneOps";
+import { StaffProgramOps } from "./StaffProgramOps";
+import { StaffReviewQueue } from "./StaffReviewQueue";
+import {
+  MetricCard,
+  type PendingStaffAction,
+  assertNever,
+  initialProgramDraft,
+  pendingActionRequest,
+} from "./StaffWorkspace.helpers";
 
 type StaffWorkspaceProps = {
   readonly state: DemoState;
   readonly onApproveTeam: (teamId: string) => void;
   readonly onRequestCorrection: (teamId: string, reason: string) => void;
   readonly onPublishTeam: (teamId: string) => void;
+  readonly onCreateProgramDraft: (input: ProgramDraftInput) => void;
 };
 
 export function StaffWorkspace({
@@ -14,14 +26,125 @@ export function StaffWorkspace({
   onApproveTeam,
   onRequestCorrection,
   onPublishTeam,
+  onCreateProgramDraft,
 }: StaffWorkspaceProps) {
+  const [programTitle, setProgramTitle] = useState<string>(initialProgramDraft.title);
+  const [period, setPeriod] = useState<string>(initialProgramDraft.period);
+  const [deadline, setDeadline] = useState<string>(initialProgramDraft.deadline);
+  const [teamSize, setTeamSize] = useState<string>(initialProgramDraft.teamSize);
+  const [categoryText, setCategoryText] = useState<string>(initialProgramDraft.categoryText);
+  const [outputType, setOutputType] = useState<string>(initialProgramDraft.outputType);
+  const [applicationFields, setApplicationFields] = useState<string>(
+    initialProgramDraft.applicationFields,
+  );
+  const [milestoneName, setMilestoneName] = useState<string>(initialProgramDraft.milestoneName);
+  const [milestoneDueDate, setMilestoneDueDate] = useState<string>(
+    initialProgramDraft.milestoneDueDate,
+  );
+  const [deliverableType, setDeliverableType] = useState<string>(
+    initialProgramDraft.deliverableType,
+  );
+  const [reminderPolicy, setReminderPolicy] = useState<string>(initialProgramDraft.reminderPolicy);
+  const [selectedProgramId, setSelectedProgramId] = useState(state.calls[0]?.id ?? "");
+  const [reviewQuery, setReviewQuery] = useState("");
+  const [pendingAction, setPendingAction] = useState<PendingStaffAction | undefined>(undefined);
+  const [correctionReason, setCorrectionReason] = useState("GitHub ID와 제출 동의서를 확인하세요.");
+  const [toast, setToast] = useState("");
+  const hasUnsavedProgramDraft =
+    programTitle !== initialProgramDraft.title ||
+    period !== initialProgramDraft.period ||
+    deadline !== initialProgramDraft.deadline ||
+    teamSize !== initialProgramDraft.teamSize ||
+    categoryText !== initialProgramDraft.categoryText ||
+    outputType !== initialProgramDraft.outputType ||
+    applicationFields !== initialProgramDraft.applicationFields ||
+    milestoneName !== initialProgramDraft.milestoneName ||
+    milestoneDueDate !== initialProgramDraft.milestoneDueDate ||
+    deliverableType !== initialProgramDraft.deliverableType ||
+    reminderPolicy !== initialProgramDraft.reminderPolicy;
+  useUnsavedChangesWarning(hasUnsavedProgramDraft);
   const reviewTargets = state.teams.filter(
     (team) =>
       team.status === "submitted" || team.status === "correction" || team.status === "provisioned",
   );
+
+  function handleCreateProgram(): void {
+    const categories = categoryText
+      .split(",")
+      .map((category) => category.trim())
+      .filter((category) => category.length > 0);
+    onCreateProgramDraft({
+      title: programTitle,
+      host: "전남대학교 소프트웨어중심대학사업단",
+      category: categories,
+      period,
+      deadline,
+      teamSize,
+      outputType,
+      applicationFields: applicationFields
+        .split(",")
+        .map((field) => field.trim())
+        .filter((field) => field.length > 0),
+      milestoneName,
+      milestoneDueDate,
+      deliverableType,
+      reminderPolicy,
+    });
+    setToast("프로그램 초안을 만들었습니다.");
+  }
+
+  function handlePendingActionChange(action: PendingStaffAction): void {
+    if (action.kind === "correction") {
+      setCorrectionReason("GitHub ID와 제출 동의서를 확인하세요.");
+    }
+    setPendingAction(action);
+  }
+
+  function confirmPendingAction(): void {
+    if (pendingAction === undefined) return;
+    const team = state.teams.find((candidate) => candidate.id === pendingAction.teamId);
+    switch (pendingAction.kind) {
+      case "approve":
+        onApproveTeam(pendingAction.teamId);
+        setToast(`${team?.name ?? "선택한 팀"}을 승인했습니다.`);
+        break;
+      case "correction":
+        if (correctionReason.trim().length === 0) {
+          setToast("보완 요청 사유를 입력해야 합니다.");
+          return;
+        }
+        onRequestCorrection(pendingAction.teamId, correctionReason);
+        setToast(`${team?.name ?? "선택한 팀"}에 보완 요청을 보냈습니다.`);
+        break;
+      case "publish":
+        onPublishTeam(pendingAction.teamId);
+        setToast(`${team?.name ?? "선택한 팀"}을 공개 자산으로 전환했습니다.`);
+        break;
+      default:
+        assertNever(pendingAction);
+    }
+    setPendingAction(undefined);
+  }
+
   return (
     <div className="workspace-grid">
-      <div className="workspace-intro">
+      <ToastMessage message={toast} onDismiss={() => setToast("")} />
+      <ConfirmDialog
+        request={pendingActionRequest(pendingAction, state)}
+        onCancel={() => setPendingAction(undefined)}
+        onConfirm={confirmPendingAction}
+      >
+        {pendingAction?.kind === "correction" ? (
+          <label className="dialog-field">
+            <span>보완 요청 사유</span>
+            <textarea
+              value={correctionReason}
+              onChange={(event) => setCorrectionReason(event.target.value)}
+            />
+          </label>
+        ) : null}
+      </ConfirmDialog>
+      <div className="workspace-intro page-header">
         <p className="section-kicker">교직원 운영</p>
         <h2>교직원 공모 운영 및 검토</h2>
         <p>
@@ -46,103 +169,42 @@ export function StaffWorkspace({
         />
         <MetricCard icon={<BarChart3 size={18} />} label="자산화 후보" value="4건" />
       </div>
-      <div className="table-panel span-wide">
-        <div className="panel-heading">
-          <div>
-            <h3>신청 검토 큐</h3>
-            <p>승인하면 repo 배정 완료 상태가 되고, 보완 요청은 학생 화면에 표시됩니다.</p>
-          </div>
-        </div>
-        <div className="table-scroll">
-          <table aria-label="교직원 신청 검토 큐">
-            <thead>
-              <tr>
-                <th>팀</th>
-                <th>대회</th>
-                <th>보고서</th>
-                <th>제출 동의서</th>
-                <th>상태</th>
-                <th>작업</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reviewTargets.map((team) => (
-                <tr key={team.id}>
-                  <td data-label="팀">{team.name}</td>
-                  <td data-label="대회">{team.contest}</td>
-                  <td data-label="보고서">{reportStateLabel(team.reportState)}</td>
-                  <td data-label="제출 동의서">{consentStateLabel(team.consentState)}</td>
-                  <td data-label="상태">{statusLabel(team.status)}</td>
-                  <td className="action-cell" data-label="작업">
-                    <button type="button" onClick={() => onApproveTeam(team.id)}>
-                      <Check size={15} />
-                      승인
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onRequestCorrection(
-                          team.id,
-                          "팀원 GitHub ID와 제출 동의서 metadata를 다시 확인하세요.",
-                        )
-                      }
-                    >
-                      <RotateCcw size={15} />
-                      보완 요청
-                    </button>
-                    <button type="button" onClick={() => onPublishTeam(team.id)}>
-                      자산 공개
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <StaffProgramOps
+        state={state}
+        selectedProgramId={selectedProgramId}
+        programTitle={programTitle}
+        period={period}
+        deadline={deadline}
+        teamSize={teamSize}
+        categoryText={categoryText}
+        outputType={outputType}
+        applicationFields={applicationFields}
+        milestoneName={milestoneName}
+        milestoneDueDate={milestoneDueDate}
+        deliverableType={deliverableType}
+        reminderPolicy={reminderPolicy}
+        onSelectedProgramChange={setSelectedProgramId}
+        onProgramTitleChange={setProgramTitle}
+        onPeriodChange={setPeriod}
+        onDeadlineChange={setDeadline}
+        onTeamSizeChange={setTeamSize}
+        onCategoryTextChange={setCategoryText}
+        onOutputTypeChange={setOutputType}
+        onApplicationFieldsChange={setApplicationFields}
+        onMilestoneNameChange={setMilestoneName}
+        onMilestoneDueDateChange={setMilestoneDueDate}
+        onDeliverableTypeChange={setDeliverableType}
+        onReminderPolicyChange={setReminderPolicy}
+        onCreateProgram={handleCreateProgram}
+      />
+      <StaffMilestoneOps state={state} selectedProgramId={selectedProgramId} />
+      <StaffReviewQueue
+        state={state}
+        teams={reviewTargets}
+        reviewQuery={reviewQuery}
+        onReviewQueryChange={setReviewQuery}
+        onPendingActionChange={handlePendingActionChange}
+      />
     </div>
   );
-}
-
-type MetricCardProps = {
-  readonly icon: ReactNode;
-  readonly label: string;
-  readonly value: string;
-};
-
-function MetricCard({ icon, label, value }: MetricCardProps) {
-  return (
-    <div className="metric-card">
-      {icon}
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
-function statusLabel(status: string): string {
-  const labels: Record<string, string> = {
-    submitted: "접수 완료",
-    correction: "보완 요청",
-    provisioned: "저장소 배정 완료",
-    published: "공개 자산",
-  };
-  return labels[status] ?? status;
-}
-
-function reportStateLabel(status: string): string {
-  const labels: Record<string, string> = {
-    "not-started": "미작성",
-    draft: "작성 중",
-    submitted: "제출 완료",
-  };
-  return labels[status] ?? status;
-}
-
-function consentStateLabel(status: string): string {
-  const labels: Record<string, string> = {
-    missing: "미제출",
-    uploaded: "업로드 완료",
-  };
-  return labels[status] ?? status;
 }

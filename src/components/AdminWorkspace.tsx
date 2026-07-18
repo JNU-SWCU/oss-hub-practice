@@ -1,16 +1,17 @@
 import { ActivitySquare, AlertTriangle, ShieldCheck, UserPlus } from "lucide-react";
-import type { ReactNode } from "react";
 import { useState } from "react";
 import type { DemoState, ManagedUser } from "../domain";
+import { AdminAuditPanel } from "./AdminAuditPanel";
+import { AdminUserManagementPanel } from "./AdminUserManagementPanel";
 import {
-  apiModeText,
-  auditActionLabel,
-  auditActorLabel,
-  auditTargetLabel,
-  parseUserRole,
-  roleLabel,
-  userStatusLabel,
-} from "./admin-workspace-labels";
+  MetricCard,
+  type PendingUserAction,
+  type UserRoleFilter,
+  assertNever,
+  pendingUserActionRequest,
+} from "./AdminWorkspace.helpers";
+import { ConfirmDialog, ToastMessage, useUnsavedChangesWarning } from "./CompliancePrimitives";
+import { apiModeText, parseUserRole } from "./admin-workspace-labels";
 
 type AdminWorkspaceProps = {
   readonly state: DemoState;
@@ -23,18 +24,36 @@ type AdminWorkspaceProps = {
   readonly onSetApiMode: (mode: DemoState["apiMode"]) => void;
 };
 
+const initialUserDraft = {
+  name: "신규 교직원",
+  role: "staff",
+  reason: "",
+} as const satisfies {
+  readonly name: string;
+  readonly role: ManagedUser["role"];
+  readonly reason: string;
+};
+
 export function AdminWorkspace({
   state,
   onAddUser,
   onUpdateUserStatus,
   onSetApiMode,
 }: AdminWorkspaceProps) {
-  const [name, setName] = useState("신규 교직원");
-  const [role, setRole] = useState<ManagedUser["role"]>("staff");
-  const [reason, setReason] = useState("");
+  const [name, setName] = useState<string>(initialUserDraft.name);
+  const [role, setRole] = useState<ManagedUser["role"]>(initialUserDraft.role);
+  const [reason, setReason] = useState<string>(initialUserDraft.reason);
   const [error, setError] = useState("");
+  const [userQuery, setUserQuery] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState<UserRoleFilter>("all");
+  const [pendingUserAction, setPendingUserAction] = useState<PendingUserAction | undefined>(
+    undefined,
+  );
+  const [toast, setToast] = useState("");
   const apiText = apiModeText(state.apiMode);
-
+  const hasUnsavedUserDraft =
+    name !== initialUserDraft.name || role !== initialUserDraft.role || reason.length > 0;
+  useUnsavedChangesWarning(hasUnsavedUserDraft);
   function handleCreateUser(): void {
     if (reason.trim().length === 0) {
       setError("권한 변경 사유를 입력해야 합니다.");
@@ -49,10 +68,36 @@ export function AdminWorkspace({
       github: role === "staff" ? "staff-email-demo" : "jnu-new-user",
       lastSeen: "2026-07-06",
     });
+    setToast(`${name} 사용자를 추가했습니다.`);
+    setReason("");
+  }
+
+  function confirmPendingUserAction(): void {
+    if (pendingUserAction === undefined) return;
+    const user = state.users.find((candidate) => candidate.id === pendingUserAction.userId);
+    switch (pendingUserAction.kind) {
+      case "pause":
+        onUpdateUserStatus(pendingUserAction.userId, "paused", "데모 비활성화");
+        setToast(`${user?.name ?? "선택한 사용자"} 계정을 비활성화했습니다.`);
+        break;
+      case "restore":
+        onUpdateUserStatus(pendingUserAction.userId, "active", "데모 복구");
+        setToast(`${user?.name ?? "선택한 사용자"} 계정을 복구했습니다.`);
+        break;
+      default:
+        assertNever(pendingUserAction);
+    }
+    setPendingUserAction(undefined);
   }
 
   return (
     <div className="workspace-grid">
+      <ToastMessage message={toast} onDismiss={() => setToast("")} />
+      <ConfirmDialog
+        request={pendingUserActionRequest(pendingUserAction, state)}
+        onCancel={() => setPendingUserAction(undefined)}
+        onConfirm={confirmPendingUserAction}
+      />
       <div className="workspace-intro">
         <p className="section-kicker">시스템 관리</p>
         <h2>시스템 관리자 운영 점검</h2>
@@ -103,97 +148,16 @@ export function AdminWorkspace({
           사용자 추가
         </button>
       </form>
-      <div className="table-panel span-wide">
-        <div className="panel-heading">
-          <div>
-            <h3>사용자 관리</h3>
-            <p>계정 삭제 대신 비활성화와 복구만 제공합니다.</p>
-          </div>
-          <div className="panel-controls">
-            <button className="segmented" type="button" onClick={() => onSetApiMode("normal")}>
-              정상
-            </button>
-            <button className="segmented" type="button" onClick={() => onSetApiMode("warning")}>
-              요청 제한 경고
-            </button>
-            <button className="segmented" type="button" onClick={() => onSetApiMode("incident")}>
-              webhook 실패
-            </button>
-          </div>
-        </div>
-        <div className="table-scroll">
-          <table aria-label="시스템 관리자 사용자 관리">
-            <thead>
-              <tr>
-                <th>이름</th>
-                <th>역할</th>
-                <th>상태</th>
-                <th>GitHub</th>
-                <th>작업</th>
-              </tr>
-            </thead>
-            <tbody>
-              {state.users.map((user) => (
-                <tr key={user.id}>
-                  <td data-label="이름">{user.name}</td>
-                  <td data-label="역할">{roleLabel(user.role)}</td>
-                  <td data-label="상태">{userStatusLabel(user.status)}</td>
-                  <td data-label="GitHub">{user.github}</td>
-                  <td className="action-cell" data-label="작업">
-                    <button
-                      type="button"
-                      onClick={() => onUpdateUserStatus(user.id, "paused", "데모 비활성화")}
-                    >
-                      비활성화
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onUpdateUserStatus(user.id, "active", "데모 복구")}
-                    >
-                      복구
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div className="table-panel span-wide">
-        <div className="panel-heading">
-          <div>
-            <h3>감사 로그</h3>
-            <p>사용자, 검토, API 상태 변경이 최근 순서로 남습니다.</p>
-          </div>
-        </div>
-        <div className="audit-list" aria-label="감사 로그">
-          {state.audit.slice(0, 6).map((event, index) => (
-            <article className="audit-item" key={`${event.id}-${index}`}>
-              <strong>{auditActionLabel(event.action)}</strong>
-              <span>{auditTargetLabel(event.target)}</span>
-              <small>
-                {auditActorLabel(event.actor)} · {event.time}
-              </small>
-            </article>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-type MetricCardProps = {
-  readonly icon: ReactNode;
-  readonly label: string;
-  readonly value: string;
-};
-
-function MetricCard({ icon, label, value }: MetricCardProps) {
-  return (
-    <div className="metric-card">
-      {icon}
-      <span>{label}</span>
-      <strong>{value}</strong>
+      <AdminUserManagementPanel
+        users={state.users}
+        userQuery={userQuery}
+        userRoleFilter={userRoleFilter}
+        onUserQueryChange={setUserQuery}
+        onUserRoleFilterChange={setUserRoleFilter}
+        onPendingUserActionChange={setPendingUserAction}
+        onSetApiMode={onSetApiMode}
+      />
+      <AdminAuditPanel audit={state.audit} />
     </div>
   );
 }

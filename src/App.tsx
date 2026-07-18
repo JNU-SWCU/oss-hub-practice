@@ -1,12 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  hasRoleHistoryState,
+  isPublicVisitorRoute,
+  readRoute,
+  replaceRoute,
+  roleFromHistoryState,
+} from "./app-routing";
+import type { Route } from "./app-routing";
 import { AppRoutes } from "./components/AppRoutes";
 import { AppShell, landingByRole } from "./components/AppShell";
 import { InformationArchitecturePage } from "./components/InformationArchitecturePage";
 import { LoginPage } from "./components/LoginPage";
 import {
+  type StudentStartChoice,
+  studentStartDestinations,
+} from "./components/StudentSetupPage.model";
+import {
+  clearStoredDemoState,
+  readStoredDemoState,
+  writeStoredDemoState,
+} from "./demo-state-storage";
+import {
   addManagedUser,
   approveTeam,
   createInitialState,
+  createProgramDraft,
   publicTeams,
   publishTeamAsset,
   requestTeamCorrection,
@@ -14,49 +32,74 @@ import {
   submitStudentApplication,
   updateManagedUserStatus,
 } from "./domain";
-import type { DemoState, ManagedUser, MetricId, RoleId, StudentApplicationInput } from "./domain";
+import type {
+  DemoState,
+  ManagedUser,
+  MetricId,
+  ProgramDraftInput,
+  RoleId,
+  StudentApplicationInput,
+} from "./domain";
 
-type Route = {
-  readonly path: string;
-  readonly reason: string;
-};
-
-const studentConsentKey = "jnu-oss-demo-student-consent";
+const legacyStudentConsentKey = "jnu-oss-demo-student-consent";
+const studentSetupKey = "jnu-oss-demo-student-setup";
 
 export function App() {
   const [route, setRoute] = useState<Route>(() => readRoute());
   const [role, setRole] = useState<RoleId | undefined>(() => roleFromHistoryState(history.state));
-  const [hasConsented, setHasConsented] = useState(
-    () => window.sessionStorage.getItem(studentConsentKey) === "accepted",
+  const [hasCompletedStudentSetup, setHasCompletedStudentSetup] = useState(
+    () =>
+      window.sessionStorage.getItem(studentSetupKey) === "accepted" ||
+      window.sessionStorage.getItem(legacyStudentConsentKey) === "accepted",
   );
-  const [hasApplied, setHasApplied] = useState(false);
-  const [state, setState] = useState<DemoState>(() => createInitialState());
+  const [state, setState] = useState<DemoState>(() => readStoredDemoState(createInitialState()));
   const [metric, setMetric] = useState<MetricId>("activity");
   const publishedTeams = useMemo(() => publicTeams(state.teams), [state.teams]);
+  const loginSummary = useMemo(
+    () => ({
+      totalPrograms: state.calls.length,
+      openPrograms: state.calls.filter((call) => call.status === "open").length,
+      reviewQueue: state.teams.filter(
+        (team) =>
+          team.status === "submitted" ||
+          team.status === "correction" ||
+          team.status === "provisioned",
+      ).length,
+      publishedAssets: publishedTeams.length,
+    }),
+    [publishedTeams.length, state.calls, state.teams],
+  );
 
   useEffect(() => {
     if (window.location.pathname === "/") {
       replaceRoute("/login");
       setRoute(readRoute());
     }
+
     function handlePopState(event: PopStateEvent): void {
       if (hasRoleHistoryState(event.state)) setRole(roleFromHistoryState(event.state));
       setRoute(readRoute());
     }
+
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   useEffect(() => {
     if (role !== "student" || route.path === "/login") return;
-    const requiredRoute = hasConsented ? "/student/dashboard" : "/consent";
-    const needsConsent = !hasConsented && route.path !== "/consent";
-    const revisitsCompletedConsent = hasConsented && route.path === "/consent";
-    if (needsConsent || revisitsCompletedConsent) {
+    const requiredRoute = hasCompletedStudentSetup ? "/student/dashboard" : "/student/setup";
+    const needsSetup = !hasCompletedStudentSetup && route.path !== "/student/setup";
+    const revisitsCompletedSetup =
+      hasCompletedStudentSetup && (route.path === "/student/setup" || route.path === "/consent");
+    if (needsSetup || revisitsCompletedSetup) {
       replaceRoute(requiredRoute, role);
       setRoute(readRoute());
     }
-  }, [hasConsented, role, route.path]);
+  }, [hasCompletedStudentSetup, role, route.path]);
+
+  useEffect(() => {
+    writeStoredDemoState(state);
+  }, [state]);
 
   function navigate(path: string, nextRole?: RoleId | null): void {
     const historicRole = nextRole === undefined ? role : (nextRole ?? undefined);
@@ -68,17 +111,20 @@ export function App() {
   function enterRole(nextRole: RoleId): void {
     setRole(nextRole);
     navigate(
-      nextRole === "student" && !hasConsented ? "/consent" : landingByRole[nextRole],
+      nextRole === "student" && !hasCompletedStudentSetup
+        ? "/student/setup"
+        : landingByRole[nextRole],
       nextRole,
     );
   }
 
   function handleReset(): void {
     setState(createInitialState());
+    clearStoredDemoState();
     setRole(undefined);
-    setHasConsented(false);
-    window.sessionStorage.removeItem(studentConsentKey);
-    setHasApplied(false);
+    setHasCompletedStudentSetup(false);
+    window.sessionStorage.removeItem(studentSetupKey);
+    window.sessionStorage.removeItem(legacyStudentConsentKey);
     setMetric("activity");
     navigate("/login", null);
   }
@@ -87,8 +133,13 @@ export function App() {
     const nextState = submitStudentApplication(state, input);
     if (nextState === state) return false;
     setState(nextState);
-    setHasApplied(true);
     return true;
+  }
+
+  function handleStudentSetupComplete(choice: StudentStartChoice): void {
+    window.sessionStorage.setItem(studentSetupKey, "accepted");
+    setHasCompletedStudentSetup(true);
+    navigate(studentStartDestinations[choice]);
   }
 
   function handleApproveTeam(teamId: string): void {
@@ -101,6 +152,10 @@ export function App() {
 
   function handlePublishTeam(teamId: string): void {
     setState((current) => publishTeamAsset(current, teamId));
+  }
+
+  function handleCreateProgramDraft(input: ProgramDraftInput): void {
+    setState((current) => createProgramDraft(current, input));
   }
 
   function handleAddUser(user: ManagedUser): void {
@@ -119,6 +174,7 @@ export function App() {
     return (
       <LoginPage
         notice={route.reason}
+        summary={loginSummary}
         onLogin={enterRole}
         onReset={handleReset}
         onNavigate={navigate}
@@ -139,10 +195,13 @@ export function App() {
     );
   }
 
-  if (role === undefined) {
+  const effectiveRole = role ?? (isPublicVisitorRoute(route.path) ? "public" : undefined);
+
+  if (effectiveRole === undefined) {
     return (
       <LoginPage
-        notice="먼저 persona를 선택해야 하는 mock route입니다."
+        notice="먼저 역할을 선택해야 접근할 수 있습니다."
+        summary={loginSummary}
         onLogin={enterRole}
         onReset={handleReset}
         onNavigate={navigate}
@@ -151,62 +210,26 @@ export function App() {
   }
 
   return (
-    <AppShell role={role} onNavigate={navigate}>
+    <AppShell role={effectiveRole} onNavigate={navigate}>
       <AppRoutes
         route={route.path}
-        role={role}
+        role={effectiveRole}
         state={state}
         metric={metric}
         publishedTeams={publishedTeams}
-        hasConsented={hasConsented}
-        hasApplied={hasApplied}
+        hasCompletedStudentSetup={hasCompletedStudentSetup}
         onMetricChange={setMetric}
         onNavigate={navigate}
         onStudentApply={handleStudentApply}
-        onConsent={() => {
-          window.sessionStorage.setItem(studentConsentKey, "accepted");
-          setHasConsented(true);
-          navigate("/student/dashboard");
-        }}
+        onStudentSetupComplete={handleStudentSetupComplete}
         onApproveTeam={handleApproveTeam}
         onRequestCorrection={handleRequestCorrection}
         onPublishTeam={handlePublishTeam}
+        onCreateProgramDraft={handleCreateProgramDraft}
         onAddUser={handleAddUser}
         onUpdateUserStatus={handleUpdateUserStatus}
         onSetApiMode={(apiMode) => setState((current) => setApiMode(current, apiMode))}
       />
     </AppShell>
   );
-}
-
-function readRoute(): Route {
-  const params = new URLSearchParams(window.location.search);
-  return {
-    path: window.location.pathname === "/" ? "/login" : window.location.pathname,
-    reason: reasonText(params.get("reason")),
-  };
-}
-
-function replaceRoute(path: string, role?: RoleId): void {
-  window.history.replaceState(role === undefined ? null : { role }, "", path);
-}
-
-function reasonText(reason: string | null): string {
-  if (reason === "student-required") {
-    return "신청서는 학생 persona에서만 접근하는 mock route입니다.";
-  }
-  return "";
-}
-
-function roleFromHistoryState(state: unknown): RoleId | undefined {
-  if (typeof state !== "object" || state === null || !("role" in state)) return undefined;
-  return isRoleId(state.role) ? state.role : undefined;
-}
-
-function hasRoleHistoryState(state: unknown): boolean {
-  return typeof state === "object" && state !== null && "role" in state;
-}
-
-function isRoleId(value: unknown): value is RoleId {
-  return value === "public" || value === "student" || value === "staff" || value === "admin";
 }

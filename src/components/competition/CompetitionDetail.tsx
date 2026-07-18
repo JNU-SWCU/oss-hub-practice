@@ -1,6 +1,5 @@
 import { ArrowLeft, FileText } from "lucide-react";
-import type { Call, MetricId, RoleId, Team } from "../../domain";
-import { StudentJourney } from "../StudentJourney";
+import type { Call, DemoState, MetricId, RoleId, Team } from "../../domain";
 import {
   CompetitionDetailPanel,
   type DetailTab,
@@ -12,6 +11,7 @@ import { Fact, type Navigate, statusLabel } from "./shared";
 type CompetitionDetailProps = {
   readonly competition: Call;
   readonly role: RoleId;
+  readonly state: DemoState;
   readonly teams: readonly Team[];
   readonly metric: MetricId;
   readonly onMetricChange: (metric: MetricId) => void;
@@ -21,6 +21,7 @@ type CompetitionDetailProps = {
 export function CompetitionDetail({
   competition,
   role,
+  state,
   teams,
   metric,
   onMetricChange,
@@ -33,7 +34,6 @@ export function CompetitionDetail({
 
   return (
     <main className={role === "student" ? "page-shell student-flow-page" : "page-shell"}>
-      {role === "student" ? <StudentJourney current="program" /> : null}
       <button className="text-link" type="button" onClick={() => onNavigate("/competitions")}>
         <ArrowLeft size={16} />
         대회 센터
@@ -57,18 +57,26 @@ export function CompetitionDetail({
             <Fact label="신청 팀" value={`${competition.teamCount}팀`} />
           </dl>
         </article>
-        <aside className="action-panel" aria-label="역할별 다음 작업">
-          <h2>다음 작업</h2>
+        <aside className="action-panel" aria-label="프로그램별 작업">
+          <h2>이 프로그램에서 할 수 있는 일</h2>
           <p>{actionDescription(role, competition.status)}</p>
           {role === "student" && competition.status === "open" ? (
-            <button
-              className="primary-action"
-              type="button"
-              onClick={() => onNavigate(`/competitions/${competition.id}/apply`)}
-            >
-              <FileText size={18} />
-              신청서 작성
-            </button>
+            <div className="action-stack">
+              <button
+                className="primary-action"
+                type="button"
+                onClick={() => onNavigate(`/competitions/${competition.id}/apply`)}
+              >
+                <FileText size={18} />이 프로그램 신청하기
+              </button>
+              <button
+                className="ghost-action"
+                type="button"
+                onClick={() => onNavigate("/student/dashboard")}
+              >
+                내 활동 목록 보기
+              </button>
+            </div>
           ) : null}
           {role === "staff" || role === "admin" ? (
             <button
@@ -115,6 +123,10 @@ export function CompetitionDetail({
         activeTab={activeTab}
         competition={competition}
         competitionTeams={competitionTeams}
+        milestones={state.milestones.filter(
+          (milestone) => milestone.competitionId === competition.id,
+        )}
+        submissions={state.submissions}
         publicTeams={publicTeams}
         metric={metric}
         onMetricChange={onMetricChange}
@@ -134,8 +146,8 @@ function parseTab(
 function actionDescription(role: RoleId, status: Call["status"]): string {
   if (role === "student") {
     return status === "open"
-      ? "신청서를 작성하면 팀 GitHub ID 수합과 repo 배정 대기가 시작됩니다."
-      : "현재 상태에서는 신규 신청을 받지 않습니다.";
+      ? "새로 신청할 수 있고, 이미 진행 중인 팀이나 저장소가 있으면 내 대시보드의 활동 목록에서 관리합니다."
+      : "현재 상태에서는 신규 신청을 받지 않습니다. 기존 팀과 저장소 상태는 내 대시보드에서 확인합니다.";
   }
   if (role === "staff")
     return "교직원은 신청자 수, 검토 큐, repo 배정, 공개 전환 상태를 관리합니다.";

@@ -1,11 +1,14 @@
+import { createActivity } from "./demo-activity-fixtures";
+import { createCompetitions, createMilestones } from "./demo-program-fixtures";
 import type {
-  ActivityEvent,
-  Call,
   DemoState,
   ManagedUser,
+  MilestoneStatus,
+  ProgramMilestone,
   Repository,
   Student,
   Team,
+  TeamMilestoneSubmission,
   TeamStatus,
 } from "./domain-types";
 import { createAudit, slugify } from "./domain-utils";
@@ -27,10 +30,13 @@ export function createInitialState(): DemoState {
   const students = createStudents();
   const calls = createCompetitions();
   const teams = createTeams();
+  const milestones = createMilestones(calls);
   return {
     students,
     teams,
     repositories: createRepositories(teams),
+    milestones,
+    submissions: createSubmissions(teams, milestones),
     users: createManagedUsers(students),
     calls,
     activity: createActivity(teams),
@@ -40,53 +46,6 @@ export function createInitialState(): DemoState {
       createAudit("admin", "set api mode normal", "GitHub API monitor"),
     ],
     apiMode: "normal",
-  };
-}
-
-function createCompetitions(): readonly Call[] {
-  return [
-    call("call-1", "2026 OSS 해커톤", "open", "2026-08-20", 18, ["OSS", "해커톤", "GitHub"]),
-    call("call-2", "산학 캡스톤 GitHub 자산화", "open", "2026-09-12", 11, ["캡스톤", "문서화"]),
-    call("call-3", "AI 모델 서비스 챌린지", "upcoming", "2026-10-05", 0, ["AI", "서비스"]),
-    call("call-4", "공개 SW 기여 챌린지", "active", "2026-07-30", 22, ["기여", "PR"]),
-    call("call-5", "보안 취약점 분석 대회", "reviewing", "2026-07-15", 9, ["보안", "리뷰"]),
-    call("call-6", "지역문제 데이터톤", "closed", "2026-06-20", 16, ["데이터", "분석"]),
-    call("call-7", "오픈소스 문서 번역 스프린트", "always", "상시", 7, ["문서", "상시"]),
-    call("call-8", "클라우드 네이티브 실습 리그", "open", "2026-08-31", 13, ["클라우드", "DevOps"]),
-    call("call-9", "OSS UI 접근성 개선전", "upcoming", "2026-11-01", 0, ["접근성", "프론트엔드"]),
-    call("call-10", "전남 데이터 시각화 경진대회", "active", "2026-08-08", 14, [
-      "데이터",
-      "시각화",
-    ]),
-    call("call-11", "2025 공개 SW 기여 아카이브", "closed", "2025-12-20", 24, ["아카이브", "기여"]),
-    call("call-12", "연구실 OSS 온보딩", "always", "상시", 6, ["교육", "온보딩"]),
-  ];
-}
-
-function call(
-  id: string,
-  title: string,
-  status: Call["status"],
-  deadline: string,
-  teamCount: number,
-  category: readonly string[],
-): Call {
-  return {
-    id,
-    title,
-    summary: `${title} 참여 팀을 모집하고 GitHub 저장소, 규칙, 제출 현황을 한 화면에서 관리합니다.`,
-    host: id === "call-2" ? "전남대학교 SW산학협력센터" : "전남대학교 소프트웨어중심대학사업단",
-    category,
-    period: status === "always" ? "상시 운영" : `2026-07-06 - ${deadline}`,
-    deadline,
-    teamSize: id === "call-7" || id === "call-12" ? "개인 가능" : "2-4명",
-    eligibility: id === "call-2" ? "캡스톤 수강팀" : "전남대학교 재학생",
-    outputType: category.includes("데이터") ? "분석 리포트" : "공개 저장소",
-    reviewBasis: "신청서, GitHub ID, README, 라이선스, 활동 로그",
-    visibility: id === "call-2" || id === "call-5" ? "internal" : "public",
-    status,
-    teamCount,
-    materials: ["참가 안내", "규칙/평가표", "저장소 템플릿"],
   };
 }
 
@@ -142,7 +101,10 @@ function createTeams(): readonly Team[] {
         name: field(fields, 1),
         competitionId: field(fields, 2),
         contest: field(fields, 3),
-        members: field(fields, 4).split(","),
+        members: field(fields, 4)
+          .split(",")
+          .map((member) => member.trim())
+          .filter((member) => member.length > 0),
         commits: numberField(fields, 5),
         prs: numberField(fields, 6),
         stars: numberField(fields, 7),
@@ -155,16 +117,16 @@ function createTeams(): readonly Team[] {
 const TEAM_ROWS = `
 team-1|나르샤 OSS|call-1|2026 OSS 해커톤|jnu-oss-1,jnu-oss-7,jnu-oss-12|316|42|31|4|published
 team-2|광주 데이터 크루|call-1|2026 OSS 해커톤|jnu-oss-3,jnu-oss-4,jnu-oss-14|284|35|27|3|provisioned
-team-3|캡스톤 리눅스 랩|call-2|산학 캡스톤 GitHub 자산화|jnu-oss-2,jnu-oss-18|248|24|18|5|published
+team-3|캡스톤 리눅스 랩|call-2|캡스톤 GitHub 자산화|jnu-oss-1,jnu-oss-2,jnu-oss-18|248|24|18|5|published
 team-4|AI README 평가단|call-4|공개 SW 기여 챌린지|jnu-oss-5,jnu-oss-8|210|19|16|2|correction
 team-5|오픈캠퍼스 맵|call-1|2026 OSS 해커톤|jnu-oss-6,jnu-oss-9|196|17|13|2|submitted
-team-6|클라우드 항해단|call-8|클라우드 네이티브 실습 리그|jnu-oss-10,jnu-oss-11|188|16|11|2|provisioned
-team-7|접근성 픽셀|call-9|OSS UI 접근성 개선전|jnu-oss-13,jnu-oss-15|142|12|9|1|submitted
-team-8|해남 데이터랩|call-10|전남 데이터 시각화 경진대회|jnu-oss-16,jnu-oss-17|164|15|8|2|published
+team-6|클라우드 항해단|call-8|클라우드 네이티브 실습 리그|jnu-oss-1,jnu-oss-10,jnu-oss-11|188|16|11|2|provisioned
+team-7|접근성 연구소|call-9|OSS UI 접근성 개선전|jnu-oss-13,jnu-oss-15|142|12|9|1|submitted
+team-8|전남 데이터로|call-10|전남 데이터 시각화 경진대회|jnu-oss-16,jnu-oss-17|164|15|8|2|published
 team-9|보안 리뷰어스|call-5|보안 취약점 분석 대회|jnu-oss-19,jnu-oss-20|133|11|7|1|correction
 team-10|번역 스프린터|call-7|오픈소스 문서 번역 스프린트|jnu-oss-21|120|9|6|1|published
-team-11|연구실 온보딩|call-12|연구실 OSS 온보딩|jnu-oss-22,jnu-oss-23|98|7|5|1|provisioned
-team-12|모델 서비스랩|call-3|AI 모델 서비스 챌린지|jnu-oss-24,jnu-oss-25|76|6|4|1|submitted
+team-11|연구실 홍보단|call-12|연구실 OSS 홍보전|jnu-oss-22,jnu-oss-23|98|7|5|1|provisioned
+team-12|모델 서비스로|call-3|AI 모델 서비스 챌린지|jnu-oss-24,jnu-oss-25|76|6|4|1|submitted
 `;
 
 function field(fields: readonly string[], index: number): string {
@@ -190,9 +152,10 @@ function teamStatus(value: string): TeamStatus {
 function createTeam(input: SeedTeamInput): Team {
   return {
     ...input,
-    repo: `github.com/jnu-sojoong/${slugify(input.name)}`,
+    repo: `github.com/JNU-SWCU/${slugify(input.name)}`,
     lastActive: "2026-07-02",
-    reportState: input.status === "published" ? "submitted" : "draft",
+    reportState:
+      input.status === "published" || input.status === "provisioned" ? "submitted" : "draft",
     consentState: input.status === "submitted" ? "missing" : "uploaded",
   };
 }
@@ -203,6 +166,50 @@ function createRepositories(teams: readonly Team[]): readonly Repository[] {
     const docs = repo(team, index + 40, "docs", team.status === "published" ? "public" : "private");
     return index < 6 ? [primary, docs] : [primary];
   });
+}
+
+function createSubmissions(
+  teams: readonly Team[],
+  milestones: readonly ProgramMilestone[],
+): readonly TeamMilestoneSubmission[] {
+  return teams.flatMap((team) =>
+    milestones
+      .filter((milestoneItem) => milestoneItem.competitionId === team.competitionId)
+      .map((milestoneItem) => submission(team, milestoneItem)),
+  );
+}
+
+function submission(team: Team, milestoneItem: ProgramMilestone): TeamMilestoneSubmission {
+  const status = submissionStatus(team.status, milestoneItem.id);
+  return {
+    id: `${team.id}-${milestoneItem.id}`,
+    teamId: team.id,
+    milestoneId: milestoneItem.id,
+    status,
+    submittedAt:
+      status === "submitted" || status === "approved" || status === "needs-revision"
+        ? team.lastActive
+        : undefined,
+    reviewerNote:
+      status === "needs-revision" ? "README와 라이선스 항목을 보완해 주세요." : undefined,
+  };
+}
+
+function submissionStatus(teamStatus: TeamStatus, milestoneId: string): MilestoneStatus {
+  if (milestoneId.endsWith("-intake")) {
+    if (teamStatus === "submitted") return "submitted";
+    if (teamStatus === "correction") return "needs-revision";
+    return "approved";
+  }
+  if (milestoneId.endsWith("-repo")) {
+    if (teamStatus === "published" || teamStatus === "provisioned") return "approved";
+    if (teamStatus === "correction") return "needs-revision";
+    return "ready";
+  }
+  if (teamStatus === "published") return "approved";
+  if (teamStatus === "provisioned") return "submitted";
+  if (teamStatus === "correction") return "needs-revision";
+  return "not-started";
 }
 
 function repo(
@@ -217,39 +224,10 @@ function repo(
     teamId: team.id,
     competitionId: team.competitionId,
     name,
-    url: `github.com/jnu-sojoong/${name}`,
+    url: `github.com/JNU-SWCU/${name}`,
     visibility,
     license: index % 2 === 0 ? "MIT" : "Apache-2.0",
     language: index % 3 === 0 ? "TypeScript" : "Python",
     lastPushed: `2026-07-${String(10 + (index % 15)).padStart(2, "0")}`,
   };
-}
-
-function createActivity(teams: readonly Team[]): readonly ActivityEvent[] {
-  return Array.from({ length: 120 }, (_, index): ActivityEvent => {
-    const team = teams[index % teams.length];
-    const fallback = teams[0];
-    const selectedTeam = team ?? fallback;
-    const actorGithub = selectedTeam?.members[index % selectedTeam.members.length] ?? "jnu-oss-1";
-    return {
-      id: `activity-${index + 1}`,
-      teamId: selectedTeam?.id ?? "team-1",
-      competitionId: selectedTeam?.competitionId ?? "call-1",
-      actorGithub,
-      kind: activityKind(index),
-      count: 1 + (index % 9),
-      occurredAt: `2026-07-${String(1 + (index % 28)).padStart(2, "0")}`,
-    };
-  });
-}
-
-function activityKind(index: number): ActivityEvent["kind"] {
-  const kinds: readonly ActivityEvent["kind"][] = [
-    "commit",
-    "pull_request",
-    "issue",
-    "review",
-    "publish",
-  ];
-  return kinds[index % kinds.length] ?? "commit";
 }

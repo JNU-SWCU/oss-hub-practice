@@ -15,7 +15,7 @@ export function slugify(value: string): string {
   return value
     .trim()
     .toLowerCase()
-    .replaceAll(" ", "-")
+    .replace(/\s+/g, "-")
     .replace(/[^\w가-힣-]/g, "")
-    .replaceAll("--", "-");
+    .replace(/-+/g, "-");
 }

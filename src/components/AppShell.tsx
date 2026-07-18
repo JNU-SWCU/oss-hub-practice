@@ -16,6 +16,26 @@ const roleLabels: Record<RoleId, string> = {
   admin: "관리자",
 };
 
+type NavGroup = {
+  readonly label: string;
+  readonly path: string;
+};
+
+const navGroups: readonly NavGroup[] = [
+  {
+    label: "프로그램",
+    path: "/competitions",
+  },
+  {
+    label: "공개 아카이브",
+    path: "/public/dashboard",
+  },
+  {
+    label: "서비스 안내",
+    path: "/information",
+  },
+];
+
 type AppShellProps = {
   readonly role: RoleId;
   readonly children: ReactNode;
@@ -31,36 +51,41 @@ export function AppShell({ role, children, onNavigate }: AppShellProps) {
           type="button"
           onClick={() => onNavigate(landingByRole[role])}
         >
-          <span className="brand-mark" aria-hidden="true">
-            OSS
-          </span>
           <span>
             <span className="institution">전남대학교 소프트웨어중심대학사업단</span>
-            <strong>JNU OSS Platform</strong>
+            <strong>Program Archive</strong>
           </span>
         </button>
         <nav className="app-nav" aria-label="주요 화면">
-          <button type="button" onClick={() => onNavigate("/competitions")}>
-            프로그램
-          </button>
-          <button type="button" onClick={() => onNavigate("/public/dashboard")}>
-            공개 아카이브
-          </button>
-          <button type="button" onClick={() => onNavigate("/information")}>
-            서비스 안내
-          </button>
+          {navGroups.map((group) => (
+            <button type="button" key={group.label} onClick={() => onNavigate(group.path)}>
+              {group.label}
+            </button>
+          ))}
           {role === "student" ? (
-            <button type="button" onClick={() => onNavigate("/student/dashboard")}>
+            <button
+              className="nav-direct"
+              type="button"
+              onClick={() => onNavigate("/student/dashboard")}
+            >
               내 대시보드
             </button>
           ) : null}
           {role === "staff" || role === "admin" ? (
-            <button type="button" onClick={() => onNavigate("/staff/operations")}>
+            <button
+              className="nav-direct"
+              type="button"
+              onClick={() => onNavigate("/staff/operations")}
+            >
               검토 큐
             </button>
           ) : null}
           {role === "admin" ? (
-            <button type="button" onClick={() => onNavigate("/admin/console")}>
+            <button
+              className="nav-direct"
+              type="button"
+              onClick={() => onNavigate("/admin/console")}
+            >
               관리자
             </button>
           ) : null}
@@ -73,6 +98,10 @@ export function AppShell({ role, children, onNavigate }: AppShellProps) {
           </button>
         </div>
       </header>
+      <div className="demo-mode-banner" role="note">
+        프론트엔드 시연 모드입니다. 실제 GitHub OAuth와 서버 DB 없이 브라우저에 데모 상태를
+        저장합니다.
+      </div>
       {children}
     </div>
   );
